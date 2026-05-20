@@ -1,0 +1,5 @@
+# Only track GarageMagic projects
+/*
+!/GarageMagicCore/
+!/GarageMagicCore.Tests/
+!/.gitignore

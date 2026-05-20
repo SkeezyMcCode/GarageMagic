@@ -1,0 +1,39 @@
+﻿## .NET / ASP.NET Core
+bin/
+obj/
+*.user
+*.suo
+*.vs/
+.vs/
+
+## SQLite database (local dev data)
+*.db
+*.db-shm
+*.db-wal
+
+## Rider / JetBrains IDE
+.idea/
+*.sln.iml
+
+## Build output
+publish/
+*.nupkg
+*.snupkg
+
+## Secrets / environment
+appsettings.Development.json
+*.pfx
+*.p12
+secrets.json
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
