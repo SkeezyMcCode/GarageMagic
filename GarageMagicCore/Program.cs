@@ -5,11 +5,16 @@ using FluentValidation;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add CORS for the React UI dev server
+// Add CORS — allow local dev + any origins listed in ALLOWED_ORIGINS env var
+var allowedOrigins = new List<string> { "http://localhost:5173" };
+var extraOrigins = builder.Configuration["AllowedOrigins"];
+if (!string.IsNullOrWhiteSpace(extraOrigins))
+    allowedOrigins.AddRange(extraOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries));
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("http://localhost:5173")
+        policy.WithOrigins([.. allowedOrigins])
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
