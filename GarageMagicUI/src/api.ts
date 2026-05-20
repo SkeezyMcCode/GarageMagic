@@ -3,7 +3,7 @@ import type {
   UserDto, UserWithStatsDto, DeckDto, MatchDto, SeasonDto,
   SeasonStandingsDto, UserStandingDto, UserStatsDto, BetrayalDto,
   CreateUserDto, CreateDeckDto, CreateMatchDto, CreateBetrayalDto,
-  LoginDto, AuthResponseDto, PendingUserDto
+  LoginDto, AuthResponseDto, PendingUserDto, CreateGuestDto
 } from './types'
 
 const api = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? '/api' })
@@ -89,4 +89,10 @@ export const approveUser = (id: number) =>
   api.post<UserDto>(`/users/${id}/approve`).then(r => r.data)
 export const rejectUser = (id: number) =>
   api.delete(`/users/${id}/reject`).then(r => r.data)
+export const createGuest = (dto: CreateGuestDto) =>
+  api.post<UserDto>('/users/guest', dto).then(r => r.data)
+export const getGuests = () =>
+  api.get<UserDto[]>('/users/guests').then(r => r.data)
+export const deleteUser = (id: number) =>
+  api.delete(`/users/${id}`).then(r => r.data)
 

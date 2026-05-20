@@ -32,6 +32,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         
         builder.Property(u => u.IsAdmin)
             .HasDefaultValue(false);
+
+        builder.Property(u => u.IsGuest)
+            .HasDefaultValue(false);
         
         builder.Property(u => u.CreatedAt)
             .IsRequired();

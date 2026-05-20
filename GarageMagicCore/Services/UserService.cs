@@ -138,6 +138,45 @@ public class UserService : IUserService
         return true;
     }
 
+    public async Task<UserDto> CreateGuestAsync(CreateGuestDto dto)
+    {
+        var name = dto.DisplayName.Trim();
+        // Ensure unique username — append a number if taken
+        var username = name;
+        var suffix = 1;
+        while (await _context.Users.AnyAsync(u => u.Username == username))
+            username = $"{name}{++suffix}";
+
+        var guest = new User
+        {
+            Username = username,
+            Email = $"guest_{Guid.NewGuid():N}@guest.local",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(Guid.NewGuid().ToString()),
+            IsApproved = true,
+            IsAdmin = false,
+            IsGuest = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.Users.Add(guest);
+        await _context.SaveChangesAsync();
+        return MapToDto(guest);
+    }
+
+    public async Task<List<UserDto>> GetGuestsAsync()
+    {
+        return await _context.Users
+            .Where(u => u.IsGuest)
+            .OrderBy(u => u.Username)
+            .Select(u => new UserDto
+            {
+                Id = u.Id, Username = u.Username, Email = u.Email,
+                CurrentPrestigeLevel = u.CurrentPrestigeLevel,
+                CreatedAt = u.CreatedAt, IsApproved = u.IsApproved,
+                IsAdmin = u.IsAdmin, IsGuest = u.IsGuest
+            })
+            .ToListAsync();
+    }
+
     private static UserDto MapToDto(User user) => new()
     {
         Id = user.Id,
@@ -146,7 +185,8 @@ public class UserService : IUserService
         CurrentPrestigeLevel = user.CurrentPrestigeLevel,
         CreatedAt = user.CreatedAt,
         IsApproved = user.IsApproved,
-        IsAdmin = user.IsAdmin
+        IsAdmin = user.IsAdmin,
+        IsGuest = user.IsGuest
     };
 }
 

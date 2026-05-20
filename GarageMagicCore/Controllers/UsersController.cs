@@ -80,6 +80,25 @@ public class UsersController : ControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
+    /// <summary>POST /api/users/guest - Create a guest player (admin only)</summary>
+    [HttpPost("guest")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateGuest([FromBody] CreateGuestDto dto)
+    {
+        var guest = await _userService.CreateGuestAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = guest.Id }, guest);
+    }
+
+    /// <summary>GET /api/users/guests - Get all guest players (admin only)</summary>
+    [HttpGet("guests")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetGuests()
+    {
+        return Ok(await _userService.GetGuestsAsync());
+    }
+
     /// <summary>GET /api/users - Get all users</summary>
     [HttpGet]
     [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]

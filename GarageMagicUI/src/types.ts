@@ -32,6 +32,9 @@ export interface UserDto {
   email: string
   currentPrestigeLevel: number
   createdAt: string
+  isApproved: boolean
+  isAdmin: boolean
+  isGuest: boolean
 }
 
 export interface UserWithStatsDto extends UserDto {
@@ -91,6 +94,7 @@ export interface UserStandingDto {
   totalLosses: number
   totalMatches: number
   winRate: number
+  isGuest?: boolean
 }
 
 export interface SeasonStandingsDto {
@@ -160,5 +164,9 @@ export interface CreateBetrayalDto {
   victimUserId: number
   description: string
   betrayalDate: string
+}
+
+export interface CreateGuestDto {
+  displayName: string
 }
 

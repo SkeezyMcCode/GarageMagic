@@ -11,6 +11,7 @@ public class User
     public DateTime? UpdatedAt { get; set; }
     public bool IsApproved { get; set; } = false;
     public bool IsAdmin { get; set; } = false;
+    public bool IsGuest { get; set; } = false;
 
     // Navigation properties
     public ICollection<Deck> Decks { get; set; } = new List<Deck>();
@@ -20,5 +21,3 @@ public class User
     public ICollection<Betrayal> BetrayalsAsBetrayer { get; set; } = new List<Betrayal>();
     public ICollection<Betrayal> BetrayalsAsVictim { get; set; } = new List<Betrayal>();
 }
-
-

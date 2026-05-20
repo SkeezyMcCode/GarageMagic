@@ -76,3 +76,7 @@ export function WinRateBar({ winRate }: { winRate: number }) {
   )
 }
 
+export function GuestBadge() {
+  return <Badge color="gray">👤 Guest</Badge>
+}
+

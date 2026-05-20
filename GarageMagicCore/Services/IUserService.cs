@@ -13,5 +13,7 @@ public interface IUserService
     Task<List<PendingUserDto>> GetPendingAsync();
     Task<UserDto?> ApproveAsync(int id);
     Task<bool> RejectAsync(int id);
+    Task<UserDto> CreateGuestAsync(CreateGuestDto dto);
+    Task<List<UserDto>> GetGuestsAsync();
 }
 
