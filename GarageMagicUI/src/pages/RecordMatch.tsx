@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom'
 import { getLeaderboard, getDecksByUser, createMatch, getCurrentSeason } from '../api'
 import type { UserStandingDto, DeckDto } from '../types'
-import { Card, Spinner, ErrorMsg, SectionHeader, Badge } from '../components/Ui'
+import { Card, Spinner, ErrorMsg, SectionHeader } from '../components/Ui'
 
 const MATCH_TYPES = [
   { value: 0, label: '1v1v1 (3 players)', count: 3, sheriff: false },

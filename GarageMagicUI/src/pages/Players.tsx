@@ -2,7 +2,7 @@
 import { Link } from 'react-router-dom'
 import { getLeaderboard, getCurrentSeason, registerUser } from '../api'
 import type { UserStandingDto, SeasonDto } from '../types'
-import { Card, Spinner, ErrorMsg, SectionHeader, PrestigeBadge, WinRateBar, Badge } from '../components/Ui'
+import { Card, Spinner, ErrorMsg, SectionHeader, PrestigeBadge, WinRateBar } from '../components/Ui'
 
 export default function Players() {
   const [players, setPlayers] = useState<UserStandingDto[]>([])
