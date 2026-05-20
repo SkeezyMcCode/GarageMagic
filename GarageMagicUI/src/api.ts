@@ -2,10 +2,35 @@
 import type {
   UserDto, UserWithStatsDto, DeckDto, MatchDto, SeasonDto,
   SeasonStandingsDto, UserStandingDto, UserStatsDto, BetrayalDto,
-  CreateUserDto, CreateDeckDto, CreateMatchDto, CreateBetrayalDto
+  CreateUserDto, CreateDeckDto, CreateMatchDto, CreateBetrayalDto,
+  LoginDto, AuthResponseDto, PendingUserDto
 } from './types'
 
 const api = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? '/api' })
+
+// Attach JWT to every request
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('gm_token')
+  if (token) config.headers.Authorization = `Bearer ${token}`
+  return config
+})
+
+// Redirect to login on 401
+api.interceptors.response.use(
+  r => r,
+  err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('gm_token')
+      localStorage.removeItem('gm_user')
+      window.location.href = '/login'
+    }
+    return Promise.reject(err)
+  }
+)
+
+// Auth
+export const loginUser = (dto: LoginDto) =>
+  api.post<AuthResponseDto>('/auth/login', dto).then(r => r.data)
 
 // Users
 export const registerUser = (dto: CreateUserDto) =>
@@ -56,4 +81,12 @@ export const getRecentBetrayals = (count = 10) =>
   api.get<BetrayalDto[]>(`/betrayals/recent?count=${count}`).then(r => r.data)
 export const getBetrayalsByUser = (userId: number) =>
   api.get<BetrayalDto[]>(`/betrayals/user/${userId}`).then(r => r.data)
+
+// Admin
+export const getPendingUsers = () =>
+  api.get<PendingUserDto[]>('/users/pending').then(r => r.data)
+export const approveUser = (id: number) =>
+  api.post<UserDto>(`/users/${id}/approve`).then(r => r.data)
+export const rejectUser = (id: number) =>
+  api.delete(`/users/${id}/reject`).then(r => r.data)
 

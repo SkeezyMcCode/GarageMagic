@@ -1,11 +1,12 @@
 ﻿using GarageMagicCore.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace GarageMagicCore.Data;
 
 public static class DbSeeder
 {
-    public static async Task SeedAsync(GarageMagicDbContext context)
+    public static async Task SeedAsync(GarageMagicDbContext context, IConfiguration config)
     {
         // Ensure database is created
         await context.Database.MigrateAsync();
@@ -21,10 +22,41 @@ public static class DbSeeder
         {
             await SeedInitialSeasonAsync(context);
         }
+
+        // Seed admin users from config
+        await SeedAdminsAsync(context, config);
         
         await context.SaveChangesAsync();
     }
     
+    private static async Task SeedAdminsAsync(GarageMagicDbContext context, IConfiguration config)
+    {
+        var adminConfigs = config.GetSection("SeedAdmins").GetChildren().ToList();
+        foreach (var adminConfig in adminConfigs)
+        {
+            var username = adminConfig["Username"];
+            var email = adminConfig["Email"];
+            var password = adminConfig["Password"];
+
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+                continue;
+
+            if (await context.Users.AnyAsync(u => u.Username == username))
+                continue; // Already exists
+
+            context.Users.Add(new User
+            {
+                Username = username,
+                Email = email ?? $"{username}@garagemagic.local",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                IsApproved = true,
+                IsAdmin = true,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+        await context.SaveChangesAsync();
+    }
+
     private static async Task SeedAppSettingsAsync(GarageMagicDbContext context)
     {
         var settings = new[]

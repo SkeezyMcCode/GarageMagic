@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using GarageMagicCore.DTOs.Season;
 using GarageMagicCore.DTOs.Stats;
 using GarageMagicCore.Services;
@@ -7,6 +8,7 @@ namespace GarageMagicCore.Controllers;
 
 [ApiController]
 [Route("api/stats")]
+[Authorize]
 public class StatsController : ControllerBase
 {
     private readonly IStatsService _statsService;

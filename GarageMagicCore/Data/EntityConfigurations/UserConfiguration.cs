@@ -27,6 +27,12 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(u => u.CurrentPrestigeLevel)
             .HasDefaultValue(0);
         
+        builder.Property(u => u.IsApproved)
+            .HasDefaultValue(false);
+        
+        builder.Property(u => u.IsAdmin)
+            .HasDefaultValue(false);
+        
         builder.Property(u => u.CreatedAt)
             .IsRequired();
         

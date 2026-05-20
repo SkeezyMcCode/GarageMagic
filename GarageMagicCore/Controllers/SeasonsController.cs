@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using GarageMagicCore.DTOs.Season;
 using GarageMagicCore.Services;
 
@@ -6,6 +7,7 @@ namespace GarageMagicCore.Controllers;
 
 [ApiController]
 [Route("api/seasons")]
+[Authorize]
 public class SeasonsController : ControllerBase
 {
     private readonly ISeasonService _seasonService;

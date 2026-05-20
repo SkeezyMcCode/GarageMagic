@@ -2,6 +2,30 @@
 export type MatchType = 'OneVsOneVsOne' | 'OneVsOneVsOneVsOne' | 'FivePlayerSheriff' | 'SixPlayerSheriff'
 export type HiddenRole = 'Sheriff' | 'Deputy' | 'Red'
 
+// Auth
+export interface AuthUser {
+  id: number
+  username: string
+  isAdmin: boolean
+}
+
+export interface LoginDto {
+  username: string
+  password: string
+}
+
+export interface AuthResponseDto {
+  token: string
+  user: AuthUser
+}
+
+export interface PendingUserDto {
+  id: number
+  username: string
+  email: string
+  createdAt: string
+}
+
 export interface UserDto {
   id: number
   username: string

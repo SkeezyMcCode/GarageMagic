@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using GarageMagicCore.DTOs.Betrayal;
 using GarageMagicCore.Services;
 
@@ -6,6 +7,7 @@ namespace GarageMagicCore.Controllers;
 
 [ApiController]
 [Route("api/betrayals")]
+[Authorize]
 public class BetrayalsController : ControllerBase
 {
     private readonly IBetrayalService _betrayalService;

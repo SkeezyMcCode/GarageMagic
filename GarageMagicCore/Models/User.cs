@@ -9,7 +9,9 @@ public class User
     public int CurrentPrestigeLevel { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-    
+    public bool IsApproved { get; set; } = false;
+    public bool IsAdmin { get; set; } = false;
+
     // Navigation properties
     public ICollection<Deck> Decks { get; set; } = new List<Deck>();
     public ICollection<MatchWinner> MatchesAsWinner { get; set; } = new List<MatchWinner>();

@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using GarageMagicCore.Data;
 using GarageMagicCore.Services;
 using FluentValidation;
@@ -24,6 +27,29 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<GarageMagicDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Add JWT Authentication
+var jwtSecret = builder.Configuration["Jwt:Secret"]
+    ?? throw new InvalidOperationException("Jwt:Secret must be configured.");
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "GarageMagic";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "GarageMagicApp";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
+        };
+    });
+
+builder.Services.AddAuthorization();
+
 // Add controllers
 builder.Services.AddControllers();
 
@@ -37,6 +63,7 @@ builder.Services.AddScoped<IMatchService, MatchService>();
 builder.Services.AddScoped<ISeasonService, SeasonService>();
 builder.Services.AddScoped<IStatsService, StatsService>();
 builder.Services.AddScoped<IBetrayalService, BetrayalService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -55,6 +82,7 @@ app.UseHttpsRedirection();
 
 app.UseCors();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
@@ -63,8 +91,8 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<GarageMagicDbContext>();
-    await DbSeeder.SeedAsync(dbContext);
+    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    await DbSeeder.SeedAsync(dbContext, config);
 }
 
 app.Run();
-

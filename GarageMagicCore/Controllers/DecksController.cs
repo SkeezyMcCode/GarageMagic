@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using FluentValidation;
 using GarageMagicCore.DTOs.Deck;
 using GarageMagicCore.Services;
@@ -7,6 +8,7 @@ namespace GarageMagicCore.Controllers;
 
 [ApiController]
 [Route("api/decks")]
+[Authorize]
 public class DecksController : ControllerBase
 {
     private readonly IDeckService _deckService;

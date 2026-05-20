@@ -29,6 +29,19 @@ public class UserDto
     public required string Email { get; set; }
     public int CurrentPrestigeLevel { get; set; }
     public DateTime CreatedAt { get; set; }
+    public bool IsApproved { get; set; }
+    public bool IsAdmin { get; set; }
+}
+
+/// <summary>
+/// DTO for a user awaiting admin approval
+/// </summary>
+public class PendingUserDto
+{
+    public int Id { get; set; }
+    public required string Username { get; set; }
+    public required string Email { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 /// <summary>

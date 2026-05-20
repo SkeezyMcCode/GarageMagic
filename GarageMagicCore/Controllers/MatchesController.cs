@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using FluentValidation;
 using GarageMagicCore.DTOs.Match;
 using GarageMagicCore.Services;
@@ -7,6 +8,7 @@ namespace GarageMagicCore.Controllers;
 
 [ApiController]
 [Route("api/matches")]
+[Authorize]
 public class MatchesController : ControllerBase
 {
     private readonly IMatchService _matchService;
