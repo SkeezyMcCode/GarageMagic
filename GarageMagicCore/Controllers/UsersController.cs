@@ -45,6 +45,15 @@ public class UsersController : ControllerBase
         }
     }
 
+    /// <summary>GET /api/users - Get all users</summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAll()
+    {
+        var users = await _userService.GetAllAsync();
+        return Ok(users);
+    }
+
     /// <summary>GET /api/users/{id} - Get user by ID</summary>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]

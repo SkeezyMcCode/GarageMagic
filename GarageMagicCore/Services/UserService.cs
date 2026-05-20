@@ -35,6 +35,12 @@ public class UserService : IUserService
         return MapToDto(user);
     }
 
+    public async Task<List<UserDto>> GetAllAsync()
+    {
+        var users = await _context.Users.OrderBy(u => u.Username).ToListAsync();
+        return users.Select(MapToDto).ToList();
+    }
+
     public async Task<UserDto?> GetByIdAsync(int id)
     {
         var user = await _context.Users.FindAsync(id);
