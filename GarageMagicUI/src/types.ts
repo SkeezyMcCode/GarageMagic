@@ -49,9 +49,26 @@ export interface DeckDto {
   userId: number
   deckName: string
   commanderName: string
+  commanderImageUri?: string | null
+  scryfallId?: string | null
   colorIdentity?: string
   isActive: boolean
   createdAt: string
+}
+
+export interface ScryfallAutocompleteDto {
+  names: string[]
+  totalValues: number
+}
+
+export interface ScryfallCardDto {
+  scryfallId: string
+  name: string
+  imageUri: string
+  manaCost?: string
+  colorIdentity: string[]
+  typeLine?: string
+  oracleText?: string
 }
 
 export interface MatchWinnerDto {
@@ -153,6 +170,12 @@ export interface CreateUserDto {
 }
 
 export interface CreateDeckDto {
+  deckName: string
+  commanderName: string
+  colorIdentity?: string
+}
+
+export interface UpdateDeckDto {
   deckName: string
   commanderName: string
   colorIdentity?: string

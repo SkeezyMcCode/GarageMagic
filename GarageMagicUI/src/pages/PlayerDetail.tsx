@@ -1,8 +1,9 @@
 ﻿import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getUserWithStats, getDecksByUser, getMatchesByUser, getCurrentSeason, getUserStats, createDeck, getBetrayalsByUser } from '../api'
+import { getUserWithStats, getDecksByUser, getMatchesByUser, getCurrentSeason, getUserStats, createDeck, updateDeck, getBetrayalsByUser } from '../api'
 import type { UserWithStatsDto, DeckDto, MatchDto, UserStatsDto, BetrayalDto } from '../types'
 import { Card, Spinner, ErrorMsg, Badge, PrestigeBadge, ColorPips } from '../components/Ui'
+import CommanderAutocompleteInput from '../components/CommanderAutocompleteInput'
 
 const MATCH_TYPE_LABEL: Record<string, string> = {
   OneVsOneVsOne: '1v1v1', OneVsOneVsOneVsOne: '1v1v1v1',
@@ -22,7 +23,12 @@ export default function PlayerDetail() {
   const [error, setError] = useState('')
   const [showDeckForm, setShowDeckForm] = useState(false)
   const [deckForm, setDeckForm] = useState({ deckName: '', commanderName: '', colorIdentity: '' })
+  const [createColorOverridden, setCreateColorOverridden] = useState(false)
   const [deckSubmitting, setDeckSubmitting] = useState(false)
+  const [editingDeckId, setEditingDeckId] = useState<number | null>(null)
+  const [editDeckForm, setEditDeckForm] = useState({ deckName: '', commanderName: '', colorIdentity: '' })
+  const [editColorOverridden, setEditColorOverridden] = useState(false)
+  const [editSubmitting, setEditSubmitting] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -60,8 +66,40 @@ export default function PlayerDetail() {
       await createDeck(userId, { ...deckForm, colorIdentity: deckForm.colorIdentity || undefined })
       setShowDeckForm(false)
       setDeckForm({ deckName: '', commanderName: '', colorIdentity: '' })
+      setCreateColorOverridden(false)
       setDecks(await getDecksByUser(userId))
     } finally { setDeckSubmitting(false) }
+  }
+
+  const startEditDeck = (deck: DeckDto) => {
+    setEditingDeckId(deck.id)
+    setEditDeckForm({
+      deckName: deck.deckName,
+      commanderName: deck.commanderName,
+      colorIdentity: deck.colorIdentity ?? '',
+    })
+    setEditColorOverridden(false)
+  }
+
+  const cancelEditDeck = () => {
+    setEditingDeckId(null)
+    setEditDeckForm({ deckName: '', commanderName: '', colorIdentity: '' })
+    setEditColorOverridden(false)
+  }
+
+  const submitEditDeck = async (deckId: number) => {
+    setEditSubmitting(true)
+    try {
+      await updateDeck(deckId, {
+        deckName: editDeckForm.deckName,
+        commanderName: editDeckForm.commanderName,
+        colorIdentity: editDeckForm.colorIdentity || undefined,
+      })
+      setDecks(await getDecksByUser(userId))
+      cancelEditDeck()
+    } finally {
+      setEditSubmitting(false)
+    }
   }
 
   if (loading) return <Spinner />
@@ -130,8 +168,16 @@ export default function PlayerDetail() {
             {showDeckForm && (
               <form onSubmit={submitDeck} className="space-y-2 mb-3">
                 <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="Deck Name" value={deckForm.deckName} onChange={e => setDeckForm(f => ({ ...f, deckName: e.target.value }))} required />
-                <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="Commander" value={deckForm.commanderName} onChange={e => setDeckForm(f => ({ ...f, commanderName: e.target.value }))} required />
-                <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="Colors (e.g. WUBG)" maxLength={6} value={deckForm.colorIdentity} onChange={e => setDeckForm(f => ({ ...f, colorIdentity: e.target.value.toUpperCase() }))} />
+                <CommanderAutocompleteInput
+                  value={deckForm.commanderName}
+                  onChange={commanderName => setDeckForm(f => ({ ...f, commanderName }))}
+                  onCardResolved={card => {
+                    if (card && !createColorOverridden) {
+                      setDeckForm(f => ({ ...f, colorIdentity: card.colorIdentity.join('') }))
+                    }
+                  }}
+                />
+                <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="Colors (e.g. WUBG)" maxLength={6} value={deckForm.colorIdentity} onChange={e => { setCreateColorOverridden(true); setDeckForm(f => ({ ...f, colorIdentity: e.target.value.toUpperCase() })) }} />
                 <button type="submit" disabled={deckSubmitting} className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
                   {deckSubmitting ? 'Adding...' : 'Add Deck'}
                 </button>
@@ -140,15 +186,77 @@ export default function PlayerDetail() {
             {decks.length === 0 ? <p className="text-gray-500 text-sm">No decks yet.</p> : (
               <div className="space-y-2">
                 {decks.map(d => (
-                  <div key={d.id} className="flex items-center justify-between bg-gray-800/50 rounded-lg px-3 py-2">
-                    <div>
-                      <p className="text-white text-sm font-medium">{d.deckName}</p>
-                      <p className="text-gray-500 text-xs">{d.commanderName}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <ColorPips colors={d.colorIdentity} />
-                      {!d.isActive && <Badge color="gray">Retired</Badge>}
-                    </div>
+                  <div key={d.id} className="bg-gray-800/50 rounded-lg px-3 py-2">
+                    {editingDeckId === d.id ? (
+                      <div className="space-y-2">
+                        <input
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                          value={editDeckForm.deckName}
+                          onChange={e => setEditDeckForm(f => ({ ...f, deckName: e.target.value }))}
+                          placeholder="Deck Name"
+                          required
+                        />
+                        <CommanderAutocompleteInput
+                          value={editDeckForm.commanderName}
+                          onChange={commanderName => setEditDeckForm(f => ({ ...f, commanderName }))}
+                          onCardResolved={card => {
+                            if (card && !editColorOverridden) {
+                              setEditDeckForm(f => ({ ...f, colorIdentity: card.colorIdentity.join('') }))
+                            }
+                          }}
+                          initialImageUri={d.commanderImageUri ?? null}
+                        />
+                        <input
+                          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                          value={editDeckForm.colorIdentity}
+                          onChange={e => { setEditColorOverridden(true); setEditDeckForm(f => ({ ...f, colorIdentity: e.target.value.toUpperCase() })) }}
+                          placeholder="Colors (e.g. WUBG)"
+                          maxLength={6}
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void submitEditDeck(d.id)}
+                            disabled={editSubmitting}
+                            className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                          >
+                            {editSubmitting ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditDeck}
+                            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={d.commanderImageUri ?? '/commander-placeholder.svg'}
+                            alt={`${d.commanderName} card art`}
+                            className="w-12 h-16 rounded object-cover border border-gray-700 shrink-0"
+                          />
+                          <div className="min-w-0">
+                            <p className="text-white text-sm font-medium truncate">{d.deckName}</p>
+                            <p className="text-gray-500 text-xs truncate">{d.commanderName}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <ColorPips colors={d.colorIdentity} />
+                          {!d.isActive && <Badge color="gray">Retired</Badge>}
+                          <button
+                            type="button"
+                            onClick={() => startEditDeck(d)}
+                            className="text-xs text-purple-400 hover:text-purple-300"
+                          >
+                            Edit
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

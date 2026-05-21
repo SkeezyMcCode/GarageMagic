@@ -4,7 +4,8 @@ import type {
   SeasonStandingsDto, UserStandingDto, UserStatsDto, BetrayalDto,
   CreateUserDto, CreateDeckDto, CreateMatchDto, CreateBetrayalDto,
   LoginDto, AuthResponseDto, PendingUserDto, CreateGuestDto,
-  UpdateSeasonDto, UpsertSeasonRecordDto
+  UpdateSeasonDto, UpsertSeasonRecordDto, UpdateDeckDto,
+  ScryfallAutocompleteDto, ScryfallCardDto
 } from './types'
 
 const apiBaseUrl = (() => {
@@ -67,10 +68,24 @@ export const getAllUsers = () =>
 // Decks
 export const createDeck = (userId: number, dto: CreateDeckDto) =>
   api.post<DeckDto>(`/decks?userId=${userId}`, dto).then(r => r.data)
+export const updateDeck = (id: number, dto: UpdateDeckDto) =>
+  api.put<DeckDto>(`/decks/${id}`, dto).then(r => r.data)
 export const getDecksByUser = (userId: number) =>
   api.get<DeckDto[]>(`/decks/user/${userId}`).then(r => r.data)
 export const deleteDeck = (id: number) =>
   api.delete(`/decks/${id}`)
+
+// Scryfall
+export const autocompleteCommanderNames = (query: string) =>
+  api.get<ScryfallAutocompleteDto>('/scryfall/autocomplete', { params: { q: query } }).then(r => r.data)
+export const getCommanderCardByName = async (name: string) => {
+  try {
+    return await api.get<ScryfallCardDto | null>('/scryfall/card', { params: { name } }).then(r => r.data)
+  } catch (err: unknown) {
+    if ((err as { response?: { status?: number } })?.response?.status === 404) return null
+    throw err
+  }
+}
 
 // Matches
 export const createMatch = (dto: CreateMatchDto) =>
