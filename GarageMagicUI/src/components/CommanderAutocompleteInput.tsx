@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { autocompleteCommanderNames, getCommanderCardByName } from '../api'
 import type { ScryfallCardDto } from '../types'
+import ManaCostSymbols from './ManaCostSymbols'
 
 const PLACEHOLDER_IMAGE = '/commander-placeholder.svg'
 
@@ -227,7 +228,7 @@ export default function CommanderAutocompleteInput({
           {previewDetails && (
             <div className="mt-2 text-xs space-y-1">
               <p className="text-white font-semibold">{previewDetails.name}</p>
-              <p className="text-purple-300">{previewDetails.manaCost}</p>
+              <p className="text-purple-300"><ManaCostSymbols manaCost={previewDetails.manaCost} /></p>
               <p className="text-gray-400">{previewDetails.typeLine}</p>
             </div>
           )}

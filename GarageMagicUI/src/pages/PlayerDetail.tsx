@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getUserWithStats, getDecksByUser, getMatchesByUser, getCurrentSeason, getUserStats, createDeck, updateDeck, getBetrayalsByUser } from '../api'
 import type { UserWithStatsDto, DeckDto, MatchDto, UserStatsDto, BetrayalDto } from '../types'
@@ -30,6 +30,26 @@ export default function PlayerDetail() {
   const [editColorOverridden, setEditColorOverridden] = useState(false)
   const [editSubmitting, setEditSubmitting] = useState(false)
   const [previewDeck, setPreviewDeck] = useState<DeckDto | null>(null)
+
+  const deckStats = useMemo(() => {
+    const stats = new Map<number, { wins: number; losses: number; matches: number }>()
+    for (const deck of decks) {
+      stats.set(deck.id, { wins: 0, losses: 0, matches: 0 })
+    }
+
+    for (const match of matches) {
+      const participant = match.participants.find(p => p.userId === userId && p.deckId)
+      if (!participant?.deckId) continue
+      const current = stats.get(participant.deckId)
+      if (!current) continue
+      const won = match.winners.some(w => w.userId === userId)
+      current.matches += 1
+      if (won) current.wins += 1
+      else current.losses += 1
+    }
+
+    return stats
+  }, [decks, matches, userId])
 
   useEffect(() => {
     let active = true
@@ -253,6 +273,18 @@ export default function PlayerDetail() {
                           <div className="min-w-0 w-full">
                             <p className="text-white text-sm font-medium truncate">{d.deckName}</p>
                             <p className="text-gray-500 text-xs truncate mt-0.5">{d.commanderName}</p>
+                            {(() => {
+                              const stats = deckStats.get(d.id)
+                              if (!stats || stats.matches === 0) {
+                                return <p className="text-gray-600 text-[11px] mt-1">No recorded matches</p>
+                              }
+                              const winRate = (stats.wins / stats.matches) * 100
+                              return (
+                                <p className="text-gray-400 text-[11px] mt-1">
+                                  {stats.wins}W-{stats.losses}L · {stats.matches} matches · {winRate.toFixed(0)}%
+                                </p>
+                              )
+                            })()}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-center">

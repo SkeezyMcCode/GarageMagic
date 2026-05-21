@@ -5,7 +5,7 @@ import type {
   CreateUserDto, CreateDeckDto, CreateMatchDto, CreateBetrayalDto,
   LoginDto, AuthResponseDto, PendingUserDto, CreateGuestDto,
   UpdateSeasonDto, UpsertSeasonRecordDto, UpdateDeckDto,
-  ScryfallAutocompleteDto, ScryfallCardDto
+  ScryfallAutocompleteDto, ScryfallCardDto, ScryfallSymbologyDto
 } from './types'
 
 const apiBaseUrl = (() => {
@@ -86,6 +86,8 @@ export const getCommanderCardByName = async (name: string) => {
     throw err
   }
 }
+export const getScryfallSymbology = () =>
+  api.get<ScryfallSymbologyDto>('/scryfall/symbology').then(r => r.data)
 
 // Matches
 export const createMatch = (dto: CreateMatchDto) =>

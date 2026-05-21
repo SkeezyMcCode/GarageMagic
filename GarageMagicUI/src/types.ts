@@ -71,6 +71,19 @@ export interface ScryfallCardDto {
   oracleText?: string
 }
 
+export interface ScryfallSymbolDto {
+  symbol: string
+  svgUri: string
+  description?: string
+  cmc?: number
+  appearsInManaCosts?: boolean
+  colors?: string[]
+}
+
+export interface ScryfallSymbologyDto {
+  symbols: ScryfallSymbolDto[]
+}
+
 export interface MatchWinnerDto {
   userId: number
   username: string
