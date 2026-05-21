@@ -78,11 +78,21 @@ function roleVisual(role: SheriffRoleDto) {
 
   if (kind === 'sheriff') return { color: '#ffffff', manaSymbol: '{W}' }
   if (kind === 'deputy') return { color: '#60a5fa', manaSymbol: '{U}' }
-  if (kind === 'renegade') return { color: '#ef4444', manaSymbol: '{R}' }
+  if (kind === 'renegade') return { color: '#111827', manaSymbol: '{B}' }
   if (kind === 'matriarch') return { color: '#22c55e', manaSymbol: '{G}' }
-  if (kind === 'outlaw') return { color: '#111827', manaSymbol: '{B}' }
+  if (kind === 'outlaw') return { color: '#ef4444', manaSymbol: '{R}' }
 
   return { color: fallbackColor, manaSymbol: normalizeManaSymbol(role.manaSymbol) || '' }
+}
+
+function roleSortIndex(role: SheriffRoleDto) {
+  const kind = canonicalRole(role)
+  if (kind === 'sheriff') return 0
+  if (kind === 'deputy') return 1
+  if (kind === 'renegade') return 2
+  if (kind === 'matriarch') return 3
+  if (kind === 'outlaw') return 4
+  return 99
 }
 
 function roleButtonStyle(color: string, selected: boolean) {
@@ -156,7 +166,7 @@ export default function RecordMatch() {
             manaSymbol: role.manaSymbol,
             winCondition: role.winCondition,
             allowMultiple: role.allowMultiple,
-          }))
+          })).sort((a, b) => roleSortIndex(a) - roleSortIndex(b))
           setRoleOptions(normalized)
         }
       })
@@ -211,6 +221,9 @@ export default function RecordMatch() {
     setWinners(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId])
 
   const usedUserIds = participants.map(p => p.userId).filter(Boolean)
+  const visibleRoleOptions = roleOptions
+    .filter(role => matchType.count === 6 || canonicalRole(role) !== 'outlaw')
+    .sort((a, b) => roleSortIndex(a) - roleSortIndex(b))
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -318,7 +331,7 @@ export default function RecordMatch() {
 
                 {matchType.sheriff && p.userId > 0 && (
                   <div className="flex gap-2 ml-8">
-                    {roleOptions.map(role => {
+                    {visibleRoleOptions.map(role => {
                       const selected = p.hiddenRole === role.value
                       const disabled = !selected && !roleAllowsMultiple(role) && participants.some((other, idx) => idx !== i && other.hiddenRole === role.value)
                       const visual = roleVisual(role)
