@@ -102,6 +102,18 @@ export interface SeasonStandingsDto {
   standings: UserStandingDto[]
 }
 
+export interface UpdateSeasonDto {
+  name: string
+  startDate: string
+  endDate: string
+}
+
+export interface UpsertSeasonRecordDto {
+  userId: number
+  totalWins: number
+  totalLosses: number
+}
+
 export interface UserStatsDto {
   userId: number
   username: string

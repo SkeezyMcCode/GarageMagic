@@ -3,7 +3,8 @@ import type {
   UserDto, UserWithStatsDto, DeckDto, MatchDto, SeasonDto,
   SeasonStandingsDto, UserStandingDto, UserStatsDto, BetrayalDto,
   CreateUserDto, CreateDeckDto, CreateMatchDto, CreateBetrayalDto,
-  LoginDto, AuthResponseDto, PendingUserDto, CreateGuestDto
+  LoginDto, AuthResponseDto, PendingUserDto, CreateGuestDto,
+  UpdateSeasonDto, UpsertSeasonRecordDto
 } from './types'
 
 const apiBaseUrl = (() => {
@@ -88,6 +89,10 @@ export const getSeasonStandings = (seasonId: number) =>
   api.get<SeasonStandingsDto>(`/seasons/${seasonId}/standings`).then(r => r.data)
 export const rolloverSeason = () =>
   api.post<SeasonDto>('/seasons/rollover').then(r => r.data)
+export const updateSeason = (seasonId: number, dto: UpdateSeasonDto) =>
+  api.patch<SeasonDto>(`/seasons/${seasonId}`, dto).then(r => r.data)
+export const upsertSeasonRecord = (seasonId: number, dto: UpsertSeasonRecordDto) =>
+  api.put(`/seasons/${seasonId}/records/${dto.userId}`, dto).then(r => r.data)
 
 // Stats
 export const getLeaderboard = (seasonId?: number) =>
