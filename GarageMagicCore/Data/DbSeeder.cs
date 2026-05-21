@@ -25,7 +25,42 @@ public static class DbSeeder
 
         // Seed admin users from config
         await SeedAdminsAsync(context, config);
+
+        // Ensure every approved, non-guest user has a UserStats row for the active season
+        await EnsureUserStatsAsync(context);
         
+        await context.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Retroactively creates missing UserStats rows for any approved players
+    /// who don't yet have stats for the active season.
+    /// </summary>
+    private static async Task EnsureUserStatsAsync(GarageMagicDbContext context)
+    {
+        var activeSeason = await context.Seasons.FirstOrDefaultAsync(s => s.IsActive);
+        if (activeSeason == null) return;
+
+        var approvedUsers = await context.Users
+            .Where(u => u.IsApproved && !u.IsGuest)
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        var existingStatUserIds = await context.UserStats
+            .Where(s => s.SeasonId == activeSeason.Id)
+            .Select(s => s.UserId)
+            .ToListAsync();
+
+        var missing = approvedUsers.Except(existingStatUserIds).ToList();
+        if (missing.Count == 0) return;
+
+        var now = DateTime.UtcNow;
+        context.UserStats.AddRange(missing.Select(uid => new UserStats
+        {
+            UserId = uid,
+            SeasonId = activeSeason.Id,
+            CreatedAt = now
+        }));
         await context.SaveChangesAsync();
     }
     
