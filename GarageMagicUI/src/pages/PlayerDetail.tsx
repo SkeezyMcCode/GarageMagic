@@ -29,6 +29,7 @@ export default function PlayerDetail() {
   const [editDeckForm, setEditDeckForm] = useState({ deckName: '', commanderName: '', colorIdentity: '' })
   const [editColorOverridden, setEditColorOverridden] = useState(false)
   const [editSubmitting, setEditSubmitting] = useState(false)
+  const [previewDeck, setPreviewDeck] = useState<DeckDto | null>(null)
 
   useEffect(() => {
     let active = true
@@ -184,9 +185,12 @@ export default function PlayerDetail() {
               </form>
             )}
             {decks.length === 0 ? <p className="text-gray-500 text-sm">No decks yet.</p> : (
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
                 {decks.map(d => (
-                  <div key={d.id} className="bg-gray-800/50 rounded-lg px-3 py-2">
+                  <div
+                    key={d.id}
+                    className={`${editingDeckId === d.id ? 'sm:col-span-2 xl:col-span-3' : ''} bg-gray-800/50 rounded-lg p-3 transition-all ${editingDeckId === d.id ? '' : 'hover:bg-gray-800/70 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5'}`}
+                  >
                     {editingDeckId === d.id ? (
                       <div className="space-y-2">
                         <input
@@ -232,19 +236,26 @@ export default function PlayerDetail() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <img
-                            src={d.commanderImageUri ?? '/commander-placeholder.svg'}
-                            alt={`${d.commanderName} card art`}
-                            className="w-12 h-16 rounded object-cover border border-gray-700 shrink-0"
-                          />
-                          <div className="min-w-0">
+                      <div className="flex flex-col items-center text-center gap-3">
+                        <div className="flex flex-col items-center gap-2 min-w-0 w-full">
+                          <button
+                            type="button"
+                            onClick={() => setPreviewDeck(d)}
+                            className="rounded-md overflow-hidden border border-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            aria-label={`Preview ${d.commanderName}`}
+                          >
+                            <img
+                              src={d.commanderImageUri ?? '/commander-placeholder.svg'}
+                              alt={`${d.commanderName} card art`}
+                              className="w-36 h-52 rounded object-cover shrink-0 transition-transform hover:scale-[1.02]"
+                            />
+                          </button>
+                          <div className="min-w-0 w-full">
                             <p className="text-white text-sm font-medium truncate">{d.deckName}</p>
-                            <p className="text-gray-500 text-xs truncate">{d.commanderName}</p>
+                            <p className="text-gray-500 text-xs truncate mt-0.5">{d.commanderName}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-center">
                           <ColorPips colors={d.colorIdentity} />
                           {!d.isActive && <Badge color="gray">Retired</Badge>}
                           <button
@@ -264,6 +275,35 @@ export default function PlayerDetail() {
           </Card>
         </div>
       </div>
+
+      {previewDeck && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPreviewDeck(null)}
+        >
+          <div
+            className="relative bg-gray-900 border border-gray-700 rounded-xl p-3 max-w-[95vw] max-h-[90vh]"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewDeck(null)}
+              className="absolute top-2 right-2 bg-gray-800 hover:bg-gray-700 text-white text-xs px-2 py-1 rounded"
+            >
+              Close
+            </button>
+            <img
+              src={previewDeck.commanderImageUri ?? '/commander-placeholder.svg'}
+              alt={`${previewDeck.commanderName} full preview`}
+              className="max-h-[78vh] w-auto rounded-lg object-contain"
+            />
+            <div className="mt-2 text-center">
+              <p className="text-white font-semibold text-sm">{previewDeck.commanderName}</p>
+              <p className="text-gray-400 text-xs">{previewDeck.deckName}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent matches */}
       <Card>
