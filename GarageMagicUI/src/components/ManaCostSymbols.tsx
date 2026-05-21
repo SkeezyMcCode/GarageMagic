@@ -3,7 +3,8 @@ import * as apiModule from '../api'
 
 interface ScryfallSymbolDto {
   symbol: string
-  svgUri: string
+  svgUri?: string
+  svg_uri?: string
   description?: string
 }
 
@@ -34,7 +35,14 @@ function parseManaCost(input: string) {
 function normalizeSymbolKey(symbol: string) {
   const trimmed = symbol.trim()
   if (!trimmed) return ''
-  return trimmed.startsWith('{') ? trimmed : `{${trimmed}}`
+  const bracketed = trimmed.startsWith('{') ? trimmed : `{${trimmed}}`
+  return bracketed.toUpperCase()
+}
+
+function fallbackSymbolUri(token: string) {
+  const inner = token.replace(/[{}]/g, '').toUpperCase().replace(/\//g, '')
+  if (!inner) return null
+  return `https://svgs.scryfall.io/card-symbols/${encodeURIComponent(inner)}.svg`
 }
 
 export default function ManaCostSymbols({ manaCost }: { manaCost?: string }) {
@@ -56,17 +64,20 @@ export default function ManaCostSymbols({ manaCost }: { manaCost?: string }) {
   return (
     <span className="inline-flex items-center gap-1 flex-wrap">
       {tokens.map((token, index) => {
-        const symbol = symbolMap.get(token)
-        if (!symbol?.svgUri) {
+        const normalizedToken = normalizeSymbolKey(token)
+        const symbol = symbolMap.get(normalizedToken)
+        const symbolUri = symbol?.svgUri ?? symbol?.svg_uri ?? fallbackSymbolUri(normalizedToken)
+
+        if (!symbolUri) {
           return <span key={`${token}-${index}`} className="text-gray-300">{token}</span>
         }
 
         return (
           <img
             key={`${token}-${index}`}
-            src={symbol.svgUri}
-            alt={symbol.description ?? token}
-            title={symbol.description ?? token}
+            src={symbolUri}
+            alt={symbol?.description ?? token}
+            title={symbol?.description ?? token}
             className="w-4 h-4 inline-block"
           />
         )
