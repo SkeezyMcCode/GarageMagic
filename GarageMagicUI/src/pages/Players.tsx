@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getLeaderboard, getCurrentSeason, registerUser } from '../api'
+import { getLeaderboard, getCurrentSeason } from '../api'
 import type { UserStandingDto, SeasonDto } from '../types'
 import { Card, Spinner, ErrorMsg, SectionHeader, PrestigeBadge, WinRateBar } from '../components/Ui'
 
@@ -9,10 +9,6 @@ export default function Players() {
   const [season, setSeason] = useState<SeasonDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ username: '', email: '', password: '' })
-  const [formError, setFormError] = useState('')
-  const [submitting, setSubmitting] = useState(false)
 
   const loadPlayers = async () => {
     const s = await getCurrentSeason()
@@ -43,24 +39,6 @@ export default function Players() {
     return () => { active = false }
   }, [])
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setFormError('')
-    setSubmitting(true)
-    try {
-      await registerUser(form)
-      setShowForm(false)
-      setForm({ username: '', email: '', password: '' })
-      const { s, leaderboard } = await loadPlayers()
-      applyPlayers(s, leaderboard)
-    } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-      setFormError(msg ?? 'Registration failed')
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   if (loading) return <Spinner />
   if (error) return <ErrorMsg msg={error} />
 
@@ -68,57 +46,10 @@ export default function Players() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <SectionHeader title="👤 Players" subtitle={season ? `Rankings for ${season.name}` : ''} />
-        <button
-          onClick={() => setShowForm(v => !v)}
-          className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
-        >
-          {showForm ? 'Cancel' : '+ Add Player'}
-        </button>
       </div>
 
-      {showForm && (
-        <Card className="mb-6">
-          <h3 className="font-semibold text-white mb-4">Register New Player</h3>
-          <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <input
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
-              placeholder="Username"
-              value={form.username}
-              onChange={e => setForm(f => ({ ...f, username: e.target.value }))}
-              required
-            />
-            <input
-              type="email"
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
-              placeholder="Email"
-              value={form.email}
-              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-              required
-            />
-            <input
-              type="password"
-              className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
-              placeholder="Password (min 8 chars)"
-              value={form.password}
-              onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              required
-            />
-            {formError && <div className="sm:col-span-3"><ErrorMsg msg={formError} /></div>}
-            <div className="sm:col-span-3">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-semibold px-6 py-2 rounded-lg text-sm transition-colors"
-              >
-                {submitting ? 'Registering...' : 'Register Player'}
-              </button>
-            </div>
-          </form>
-        </Card>
-      )}
-
       {players.length === 0 ? (
-        <Card><p className="text-gray-500 text-sm">No players yet. Add one above!</p></Card>
+        <Card><p className="text-gray-500 text-sm">No players yet. Create an account to appear here.</p></Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {players.map((p, i) => (

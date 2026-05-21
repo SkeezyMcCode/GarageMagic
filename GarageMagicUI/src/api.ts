@@ -108,6 +108,8 @@ export const getPendingUsers = () =>
   api.get<PendingUserDto[]>('/users/pending').then(r => r.data)
 export const approveUser = (id: number) =>
   api.post<UserDto>(`/users/${id}/approve`).then(r => r.data)
+export const approveAndLinkUser = (id: number, guestUserId: number) =>
+  api.post<UserDto>(`/users/${id}/approve-and-link`, { guestUserId }).then(r => r.data)
 export const rejectUser = (id: number) =>
   api.delete(`/users/${id}/reject`).then(r => r.data)
 export const createGuest = (dto: CreateGuestDto) =>
