@@ -1,12 +1,10 @@
 ﻿import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { loginUser, registerUser } from '../api'
 import { useAuth } from '../context/AuthContext'
 import { ErrorMsg } from '../components/Ui'
 
 export default function Login() {
   const { login } = useAuth()
-  const nav = useNavigate()
   const [tab, setTab] = useState<'login' | 'register'>('login')
 
   const [loginForm, setLoginForm] = useState({ username: '', password: '' })
@@ -25,7 +23,7 @@ export default function Login() {
     try {
       const res = await loginUser(loginForm)
       login(res.token, res.user)
-      nav('/')
+      // LoginGuard will redirect to / once user state updates
     } catch (err: unknown) {
       const status = (err as { response?: { status?: number; data?: { error?: string } } })?.response?.status
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
