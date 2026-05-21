@@ -31,6 +31,11 @@ builder.Services.AddDbContext<GarageMagicDbContext>(options =>
 // Add JWT Authentication
 var jwtSecret = builder.Configuration["Jwt:Secret"]
     ?? throw new InvalidOperationException("Jwt:Secret must be configured.");
+
+if (Encoding.UTF8.GetByteCount(jwtSecret) < 16)
+    throw new InvalidOperationException(
+        $"Jwt:Secret is too short ({Encoding.UTF8.GetByteCount(jwtSecret) * 8} bits). " +
+        "HS256 requires at least 128 bits (16 characters). Use at least 32 characters for security.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "GarageMagic";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "GarageMagicApp";
 
