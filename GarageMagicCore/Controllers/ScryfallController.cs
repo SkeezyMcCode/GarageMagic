@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using GarageMagicCore.DTOs.Scryfall;
 using GarageMagicCore.Services;
 
+
 namespace GarageMagicCore.Controllers;
 
 [ApiController]
@@ -64,9 +65,10 @@ public class ScryfallController : ControllerBase
     /// Returns the complete Scryfall mana symbol list, each entry containing the symbol
     /// notation (e.g. "{W}") and an SVG image URI for client-side rendering of mana costs.
     /// Results are cached server-side for 24 hours; stale cache is served on upstream failure.
-    /// Returns 502 only when Scryfall is unreachable and no cached data exists.
+    /// Falls back to a built-in static symbol list when Scryfall is unreachable and no cached data exists.
     /// </summary>
     [HttpGet("symbology")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(SymbologyDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status502BadGateway)]
     public async Task<IActionResult> GetSymbology()
