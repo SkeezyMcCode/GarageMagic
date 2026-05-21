@@ -42,6 +42,47 @@ function colorToRgba(input: string, alpha: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+function resolveRoleColor(input: string) {
+  const named: Record<string, string> = {
+    white: '#ffffff',
+    blue: '#60a5fa',
+    red: '#f87171',
+    green: '#4ade80',
+    black: '#111827',
+  }
+  const key = input.trim().toLowerCase()
+  return named[key] ?? input
+}
+
+function roleButtonStyle(color: string, selected: boolean) {
+  const resolved = resolveRoleColor(color)
+
+  // Strong defaults when backend sends unexpected color values.
+  if (!resolved.startsWith('#') || resolved.length !== 7) {
+    return selected
+      ? { backgroundColor: '#7c3aed', borderColor: '#7c3aed', color: '#ffffff' }
+      : { backgroundColor: 'rgba(55, 65, 81, 0.95)', borderColor: '#6b7280', color: '#e5e7eb' }
+  }
+
+  // Renegade red gets extra contrast in both states.
+  if (resolved.toLowerCase() === '#f87171') {
+    return selected
+      ? { backgroundColor: '#ef4444', borderColor: '#ef4444', color: '#ffffff' }
+      : { backgroundColor: '#1f1b1b', borderColor: '#ef4444', color: '#fca5a5' }
+  }
+
+  // White role needs dark text when selected.
+  if (resolved.toLowerCase() === '#ffffff') {
+    return selected
+      ? { backgroundColor: '#ffffff', borderColor: '#d1d5db', color: '#111827' }
+      : { backgroundColor: '#1f2937', borderColor: '#9ca3af', color: '#f9fafb' }
+  }
+
+  return selected
+    ? { backgroundColor: resolved, borderColor: resolved, color: '#ffffff' }
+    : { backgroundColor: colorToRgba(resolved, 0.25), borderColor: colorToRgba(resolved, 0.65), color: '#e5e7eb' }
+}
+
 
 export default function RecordMatch() {
   const nav = useNavigate()
@@ -243,6 +284,7 @@ export default function RecordMatch() {
                     {roleOptions.map(role => {
                       const selected = p.hiddenRole === role.value
                       const disabled = !selected && !roleAllowsMultiple(role) && participants.some((other, idx) => idx !== i && other.hiddenRole === role.value)
+                      const buttonStyle = roleButtonStyle(role.color || '#7c3aed', selected)
                       return (
                       <button
                         key={role.value}
@@ -250,14 +292,12 @@ export default function RecordMatch() {
                         onClick={() => setParticipantRole(i, role)}
                         disabled={disabled}
                         title={role.winCondition ?? role.label}
-                        style={selected
-                          ? { backgroundColor: role.color, borderColor: role.color, color: '#0a0a0a' }
-                          : { backgroundColor: colorToRgba(role.color, 0.18), borderColor: colorToRgba(role.color, 0.5), color: role.color }}
+                        style={buttonStyle}
                         className={`flex-1 text-sm py-2 rounded-lg border transition-colors ${disabled ? 'opacity-35 cursor-not-allowed' : 'hover:brightness-110'}`}
                       >
-                        <span className="inline-flex items-center justify-center gap-1">
+                        <span className="inline-flex items-center justify-center gap-1.5 w-full">
                           {role.manaSymbol && <ManaCostSymbols manaCost={normalizeManaSymbol(role.manaSymbol)} />}
-                          <span>{role.label}</span>
+                          <span className="leading-none">{role.label}</span>
                         </span>
                       </button>
                       )
