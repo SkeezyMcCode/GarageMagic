@@ -70,6 +70,27 @@ public class UsersController : ControllerBase
     }
 
     /// <summary>
+    /// POST /api/users/{id}/set-admin — Grant or revoke admin role (admin only).
+    /// Send { "isAdmin": true } to grant, { "isAdmin": false } to revoke.
+    /// </summary>
+    [HttpPost("{id:int}/set-admin")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetAdmin(int id, [FromBody] SetAdminDto dto)
+    {
+        try
+        {
+            var user = await _userService.SetAdminAsync(id, dto.IsAdmin);
+            return Ok(user);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// POST /api/users/{pendingUserId}/approve-and-link — Approve a pending user and migrate
     /// all history from an existing guest account in a single transaction (admin only).
     /// </summary>

@@ -24,4 +24,10 @@ public interface IUserService
     /// or the guest user is not a guest.
     /// </summary>
     Task<UserDto> ApproveAndLinkAsync(int pendingUserId, int guestUserId);
+
+    /// <summary>
+    /// Grants or revokes admin privileges for a user.
+    /// Throws <see cref="KeyNotFoundException"/> if the user is not found.
+    /// </summary>
+    Task<UserDto> SetAdminAsync(int id, bool isAdmin);
 }

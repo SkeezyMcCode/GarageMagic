@@ -197,6 +197,17 @@ public class UserService : IUserService
             .ToListAsync();
     }
 
+    public async Task<UserDto> SetAdminAsync(int id, bool isAdmin)
+    {
+        var user = await _context.Users.FindAsync(id)
+            ?? throw new KeyNotFoundException($"User {id} not found.");
+
+        user.IsAdmin   = isAdmin;
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return MapToDto(user);
+    }
+
     public async Task<UserDto> ApproveAndLinkAsync(int pendingUserId, int guestUserId)
     {
         // ── Fast-fail validation (outside transaction) ────────────────────────

@@ -72,3 +72,10 @@ public class ApproveAndLinkDto
 {
     public int GuestUserId { get; set; }
 }
+
+/// <summary>
+/// Request body for POST /users/{id}/set-admin.</summary>
+public class SetAdminDto
+{
+    public bool IsAdmin { get; set; }
+}
