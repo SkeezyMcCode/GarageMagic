@@ -2,8 +2,9 @@
 import { useParams, Link } from 'react-router-dom'
 import { getUserWithStats, getDecksByUser, getMatchesByUser, getCurrentSeason, getUserStats, createDeck, updateDeck, getBetrayalsByUser } from '../api'
 import type { UserWithStatsDto, DeckDto, MatchDto, UserStatsDto, BetrayalDto } from '../types'
-import { Card, Spinner, ErrorMsg, Badge, PrestigeBadge, ColorPips } from '../components/Ui'
+import { Card, Spinner, ErrorMsg, Badge, PrestigeBadge } from '../components/Ui'
 import CommanderAutocompleteInput from '../components/CommanderAutocompleteInput'
+import ManaCostSymbols from '../components/ManaCostSymbols'
 
 const MATCH_TYPE_LABEL: Record<string, string> = {
   OneVsOneVsOne: '1v1v1', OneVsOneVsOneVsOne: '1v1v1v1',
@@ -288,7 +289,7 @@ export default function PlayerDetail() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0 flex-wrap justify-center">
-                          <ColorPips colors={d.colorIdentity} />
+                          {d.colorIdentity && <ManaCostSymbols manaCost={toManaCost(d.colorIdentity)} />}
                           {!d.isActive && <Badge color="gray">Retired</Badge>}
                           <button
                             type="button"
@@ -385,5 +386,14 @@ function Row({ label, value, color = 'text-white' }: { label: string; value: str
       <span className={`font-semibold ${color}`}>{value}</span>
     </div>
   )
+}
+
+function toManaCost(colorIdentity: string) {
+  return colorIdentity
+    .toUpperCase()
+    .replace(/[^WUBRGC]/g, '')
+    .split('')
+    .map(c => `{${c}}`)
+    .join('')
 }
 
