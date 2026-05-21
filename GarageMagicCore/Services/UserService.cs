@@ -234,38 +234,39 @@ public class UserService : IUserService
             pendingUser.UpdatedAt  = DateTime.UtcNow;
 
             // 3. Migrate MatchParticipants
-            await _context.MatchParticipants
-                .Where(mp => mp.UserId == guestUserId)
-                .ExecuteUpdateAsync(s => s.SetProperty(mp => mp.UserId, pendingUserId));
+            var participants = await _context.MatchParticipants
+                .Where(mp => mp.UserId == guestUserId).ToListAsync();
+            foreach (var mp in participants) mp.UserId = pendingUserId;
 
             // 4. Migrate MatchWinners
-            await _context.MatchWinners
-                .Where(mw => mw.UserId == guestUserId)
-                .ExecuteUpdateAsync(s => s.SetProperty(mw => mw.UserId, pendingUserId));
+            var winners = await _context.MatchWinners
+                .Where(mw => mw.UserId == guestUserId).ToListAsync();
+            foreach (var mw in winners) mw.UserId = pendingUserId;
 
             // 5. Migrate Betrayals (both betrayer and victim roles)
-            await _context.Betrayals
-                .Where(b => b.BetrayerUserId == guestUserId)
-                .ExecuteUpdateAsync(s => s.SetProperty(b => b.BetrayerUserId, pendingUserId));
+            var betrayalsAsBetrayer = await _context.Betrayals
+                .Where(b => b.BetrayerUserId == guestUserId).ToListAsync();
+            foreach (var b in betrayalsAsBetrayer) b.BetrayerUserId = pendingUserId;
 
-            await _context.Betrayals
-                .Where(b => b.VictimUserId == guestUserId)
-                .ExecuteUpdateAsync(s => s.SetProperty(b => b.VictimUserId, pendingUserId));
+            var betrayalsAsVictim = await _context.Betrayals
+                .Where(b => b.VictimUserId == guestUserId).ToListAsync();
+            foreach (var b in betrayalsAsVictim) b.VictimUserId = pendingUserId;
 
             // 6. Migrate Decks
-            await _context.Decks
-                .Where(d => d.UserId == guestUserId)
-                .ExecuteUpdateAsync(s => s.SetProperty(d => d.UserId, pendingUserId));
+            var decks = await _context.Decks
+                .Where(d => d.UserId == guestUserId).ToListAsync();
+            foreach (var d in decks) d.UserId = pendingUserId;
 
             // 7. Migrate Match.SheriffUserId references
-            await _context.Matches
-                .Where(m => m.SheriffUserId == guestUserId)
-                .ExecuteUpdateAsync(s => s.SetProperty(m => m.SheriffUserId, pendingUserId));
+            var sheriffMatches = await _context.Matches
+                .Where(m => m.SheriffUserId == guestUserId).ToListAsync();
+            foreach (var m in sheriffMatches) m.SheriffUserId = pendingUserId;
 
             // 8. Migrate PrestigeLevels
-            await _context.PrestigeLevels
-                .Where(p => p.UserId == guestUserId)
-                .ExecuteUpdateAsync(s => s.SetProperty(p => p.UserId, pendingUserId));
+            var prestigeLevels = await _context.PrestigeLevels
+                .Where(p => p.UserId == guestUserId).ToListAsync();
+            foreach (var p in prestigeLevels) p.UserId = pendingUserId;
+
 
             // 9. Migrate UserStats — merge into pending user's row if season already has one
             var guestStats = await _context.UserStats
@@ -350,4 +351,3 @@ public class UserService : IUserService
         IsGuest = user.IsGuest
     };
 }
-

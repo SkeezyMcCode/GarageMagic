@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using GarageMagicCore.Data;
 using GarageMagicCore.Models;
 
@@ -9,11 +10,15 @@ public static class TestDbHelper
     /// <summary>
     /// Creates a fresh in-memory DbContext with a unique database name per call,
     /// pre-seeded with AppSettings and an active season.
+    /// The InMemory provider silently ignores transactions (no rollback semantics);
+    /// TransactionIgnoredWarning is suppressed so service code that uses
+    /// BeginTransactionAsync still compiles and runs without errors in tests.
     /// </summary>
     public static GarageMagicDbContext CreateContext(string? dbName = null)
     {
         var options = new DbContextOptionsBuilder<GarageMagicDbContext>()
             .UseInMemoryDatabase(dbName ?? Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         var context = new GarageMagicDbContext(options);
