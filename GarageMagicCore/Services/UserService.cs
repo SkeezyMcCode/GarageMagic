@@ -201,6 +201,20 @@ public class UserService : IUserService
         };
         _context.Users.Add(guest);
         await _context.SaveChangesAsync();
+
+        // Seed a UserStats row for the active season so guest stats are tracked from creation
+        var activeSeason = await _context.Seasons.FirstOrDefaultAsync(s => s.IsActive);
+        if (activeSeason != null)
+        {
+            _context.UserStats.Add(new UserStats
+            {
+                UserId = guest.Id,
+                SeasonId = activeSeason.Id,
+                CreatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+        }
+
         return MapToDto(guest);
     }
 
