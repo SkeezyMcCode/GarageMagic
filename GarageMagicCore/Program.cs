@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.HttpOverrides;
 using System.Text;
 using GarageMagicCore.Data;
 using GarageMagicCore.Services;
@@ -71,6 +72,12 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Trust headers forwarded by the reverse proxy (nginx)
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -78,9 +85,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
+// CORS must come before HTTPS redirect so preflight responses are handled correctly
 app.UseCors();
+
+// Only redirect to HTTPS in development; in production the reverse proxy handles TLS
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
