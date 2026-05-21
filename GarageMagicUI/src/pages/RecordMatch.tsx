@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getLeaderboard, getDecksByUser, createMatch, getCurrentSeason } from '../api'
-import type { UserStandingDto, DeckDto } from '../types'
+import { getSelectableUsers, getDecksByUser, createMatch } from '../api'
+import type { UserDto, DeckDto } from '../types'
 import { Card, Spinner, ErrorMsg, SectionHeader } from '../components/Ui'
 
 const MATCH_TYPES = [
@@ -21,7 +21,7 @@ interface Participant { userId: number; deckId?: number; hiddenRole?: number }
 
 export default function RecordMatch() {
   const nav = useNavigate()
-  const [players, setPlayers] = useState<UserStandingDto[]>([])
+  const [players, setPlayers] = useState<UserDto[]>([])
   const [decksByUser, setDecksByUser] = useState<Record<number, DeckDto[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -33,8 +33,8 @@ export default function RecordMatch() {
   const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
-    Promise.all([getCurrentSeason(), getLeaderboard()])
-      .then(([, lb]) => setPlayers(lb))
+    getSelectableUsers()
+      .then(setPlayers)
       .catch(() => setError('Could not load players.'))
       .finally(() => setLoading(false))
   }, [])
@@ -152,7 +152,7 @@ export default function RecordMatch() {
                   >
                     <option value="">Select player…</option>
                     {players.map(pl => (
-                      <option key={pl.userId} value={pl.userId} disabled={usedUserIds.includes(pl.userId) && pl.userId !== p.userId}>
+                      <option key={pl.id} value={pl.id} disabled={usedUserIds.includes(pl.id) && pl.id !== p.userId}>
                         {pl.username}
                       </option>
                     ))}
@@ -194,7 +194,7 @@ export default function RecordMatch() {
           </h3>
           <div className="flex flex-wrap gap-2">
             {participants.filter(p => p.userId > 0).map(p => {
-              const player = players.find(pl => pl.userId === p.userId)
+              const player = players.find(pl => pl.id === p.userId)
               if (!player) return null
               const selected = winners.includes(p.userId)
               return (
@@ -206,7 +206,7 @@ export default function RecordMatch() {
             })}
           </div>
           {winners.length > 0 && (
-            <p className="text-green-400 text-xs mt-2">Winner{winners.length > 1 ? 's' : ''}: {winners.map(id => players.find(p => p.userId === id)?.username).join(', ')}</p>
+            <p className="text-green-400 text-xs mt-2">Winner{winners.length > 1 ? 's' : ''}: {winners.map(id => players.find(p => p.id === id)?.username).join(', ')}</p>
           )}
         </Card>
 

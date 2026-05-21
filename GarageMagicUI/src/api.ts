@@ -64,6 +64,8 @@ export const getUserWithStats = (id: number) =>
   api.get<UserWithStatsDto>(`/users/${id}/stats`).then(r => r.data)
 export const getAllUsers = () =>
   api.get<UserDto[]>('/users').then(r => r.data)
+export const getSelectableUsers = () =>
+  api.get<UserDto[]>('/users/selectable').then(r => r.data)
 
 // Decks
 export const createDeck = (userId: number, dto: CreateDeckDto) =>
