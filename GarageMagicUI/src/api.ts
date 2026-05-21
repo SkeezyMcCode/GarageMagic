@@ -6,7 +6,15 @@ import type {
   LoginDto, AuthResponseDto, PendingUserDto, CreateGuestDto
 } from './types'
 
-const api = axios.create({ baseURL: import.meta.env.VITE_API_URL ?? '/api' })
+const apiBaseUrl = (() => {
+  const configuredUrl = import.meta.env.VITE_API_URL?.trim()
+  if (!configuredUrl && import.meta.env.PROD) {
+    console.warn('VITE_API_URL is not set. The UI will fall back to /api, which usually requires a matching reverse proxy or rewrite.')
+  }
+  return configuredUrl || '/api'
+})()
+
+const api = axios.create({ baseURL: apiBaseUrl })
 
 // Attach JWT to every request
 api.interceptors.request.use(config => {
