@@ -16,5 +16,11 @@ public interface IScryfallService
     /// Results are cached for 24 hours.
     /// </summary>
     Task<CommanderCardDto?> LookupCommanderAsync(string name);
+
+    /// <summary>
+    /// Returns the full Scryfall symbology list (all mana symbols with SVG URIs).
+    /// Results are cached for 7 days — the list almost never changes.
+    /// </summary>
+    Task<SymbologyDto> GetSymbologyAsync();
 }
 

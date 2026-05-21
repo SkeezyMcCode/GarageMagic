@@ -26,3 +26,28 @@ public class CommanderCardDto
     public string? OracleText { get; set; }
 }
 
+/// <summary>
+/// A single mana / card symbol from the Scryfall symbology list.
+/// </summary>
+public class ManaSymbolDto
+{
+    /// <summary>Symbol notation, e.g. "{W}", "{2}", "{T}".</summary>
+    public required string Symbol { get; set; }
+    /// <summary>SVG image URI hosted by Scryfall CDN.</summary>
+    public required string SvgUri { get; set; }
+    /// <summary>Human-readable description, e.g. "one white mana".</summary>
+    public string? Description { get; set; }
+    /// <summary>Converted mana cost value.</summary>
+    public decimal Cmc { get; set; }
+    /// <summary>Whether this symbol appears in mana costs.</summary>
+    public bool AppearsInManaCosts { get; set; }
+    public List<string> Colors { get; set; } = new();
+}
+
+/// <summary>
+/// Full symbology list returned by GET /api/scryfall/symbology.
+/// </summary>
+public class SymbologyDto
+{
+    public List<ManaSymbolDto> Symbols { get; set; } = new();
+}

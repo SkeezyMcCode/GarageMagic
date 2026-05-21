@@ -9,6 +9,15 @@ const MATCH_TYPE_LABEL: Record<string, string> = {
   FivePlayerSheriff: '5P Sheriff', SixPlayerSheriff: '6P Sheriff',
 }
 
+const ROLE_STYLE: Record<string, { symbol: string; text: string; className: string }> = {
+  Sheriff: { symbol: '●', text: 'Sheriff', className: 'text-white' },
+  Deputy: { symbol: '●', text: 'Deputy', className: 'text-blue-400' },
+  Red: { symbol: '●', text: 'Renegade', className: 'text-red-400' },
+  Renegade: { symbol: '●', text: 'Renegade', className: 'text-red-400' },
+  Matriarch: { symbol: '●', text: 'Matriarch', className: 'text-green-400' },
+  Outlaw: { symbol: '●', text: 'Outlaw', className: 'text-gray-900 bg-gray-200 rounded-full px-1' },
+}
+
 export default function Matches() {
   const [matches, setMatches] = useState<MatchDto[]>([])
   const [seasons, setSeasons] = useState<SeasonDto[]>([])
@@ -61,21 +70,37 @@ export default function Matches() {
         <div className="space-y-3">
           {matches.map(m => (
             <Card key={m.id} className="hover:border-gray-700 transition-colors">
+              {(() => {
+                const winnerIds = new Set(m.winners.map(w => w.userId))
+                const orderedParticipants = [...m.participants].sort((a, b) => {
+                  const aWon = winnerIds.has(a.userId)
+                  const bWon = winnerIds.has(b.userId)
+                  if (aWon === bWon) return 0
+                  return aWon ? -1 : 1
+                })
+
+                return (
               <div className="flex items-start gap-4">
                 <div className="shrink-0">
                   <Badge color="purple">{MATCH_TYPE_LABEL[m.matchType]}</Badge>
                   <p className="text-gray-600 text-xs mt-1">{new Date(m.matchDate).toLocaleDateString()}</p>
                 </div>
                 <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-500 mb-2">Type: {MATCH_TYPE_LABEL[m.matchType]}</p>
                   <div className="flex flex-wrap gap-2 mb-2">
-                    {m.participants.map(p => {
+                    {orderedParticipants.map(p => {
                       const won = m.winners.some(w => w.userId === p.userId)
+                      const role = p.hiddenRole ? (ROLE_STYLE[p.hiddenRole] ?? { symbol: '●', text: p.hiddenRole, className: 'text-black bg-gray-200 rounded-full px-1' }) : null
                       return (
                         <Link key={p.userId} to={`/players/${p.userId}`}>
                           <span className={`inline-flex items-center gap-1 text-sm px-2 py-0.5 rounded-full border ${won ? 'border-green-700 bg-green-900/20 text-green-300' : 'border-gray-700 bg-gray-800/50 text-gray-400'}`}>
                             {won && '👑 '}{p.username}
                             {p.deckName && <span className="text-xs opacity-60">({p.deckName})</span>}
-                            {p.hiddenRole && <Badge color={p.hiddenRole === 'Sheriff' ? 'yellow' : p.hiddenRole === 'Deputy' ? 'blue' : 'red'}>{p.hiddenRole}</Badge>}
+                            {role && (
+                              <span title={role.text} className={`text-xs font-semibold ${role.className}`}>
+                                {role.symbol}
+                              </span>
+                            )}
                           </span>
                         </Link>
                       )
@@ -83,6 +108,8 @@ export default function Matches() {
                   </div>
                 </div>
               </div>
+                )
+              })()}
             </Card>
           ))}
         </div>

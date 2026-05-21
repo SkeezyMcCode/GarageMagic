@@ -17,9 +17,9 @@ public class ScryfallService : IScryfallService
     private readonly IMemoryCache _cache;
     private readonly ILogger<ScryfallService> _logger;
 
-    // Cache durations
     private static readonly TimeSpan AutocompleteCacheDuration = TimeSpan.FromHours(24);
     private static readonly TimeSpan CardCacheDuration         = TimeSpan.FromHours(24);
+    private static readonly TimeSpan SymbologyCacheDuration    = TimeSpan.FromDays(7);
 
     public ScryfallService(HttpClient http, IMemoryCache cache, ILogger<ScryfallService> logger)
     {
@@ -40,18 +40,33 @@ public class ScryfallService : IScryfallService
 
         try
         {
-            // Scryfall autocomplete + filter suggestions client-side to commanders
-            var url = $"cards/autocomplete?q={Uri.EscapeDataString(query)}&include_extras=false";
-            var response = await _http.GetFromJsonAsync<ScryfallAutocompleteResponse>(url);
+            // Search restricted to commander-legal cards only.
+            // "is:commander" matches legendary creatures + planeswalkers with the commander rule.
+            var searchQuery = $"is:commander name:{query}";
+            var url = $"cards/search?q={Uri.EscapeDataString(searchQuery)}&order=name&unique=cards";
+            var response = await _http.GetFromJsonAsync<ScryfallSearchResponse>(url);
+
+            var names = (response?.Data ?? [])
+                .Select(c => c.Name)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Take(limit)
+                .ToList();
 
             var result = new CommanderAutocompleteDto
             {
-                Names       = (response?.Data ?? []).Take(limit).ToList(),
-                TotalValues = response?.TotalValues ?? 0
+                Names       = names,
+                TotalValues = response?.TotalCards ?? names.Count
             };
 
             _cache.Set(cacheKey, result, AutocompleteCacheDuration);
             return result;
+        }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            // 404 from Scryfall search = no cards matched — not an error
+            var empty = new CommanderAutocompleteDto();
+            _cache.Set(cacheKey, empty, AutocompleteCacheDuration);
+            return empty;
         }
         catch (Exception ex)
         {
@@ -104,7 +119,6 @@ public class ScryfallService : IScryfallService
         }
         catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
         {
-            // Valid "not found" — cache the miss so we don't hammer Scryfall
             _cache.Set(cacheKey, (CommanderCardDto?)null, CardCacheDuration);
             return null;
         }
@@ -115,15 +129,79 @@ public class ScryfallService : IScryfallService
         }
     }
 
+    /// <inheritdoc/>
+    public async Task<SymbologyDto> GetSymbologyAsync()
+    {
+        const string cacheKey = "scryfall:symbology";
+        if (_cache.TryGetValue(cacheKey, out SymbologyDto? cached) && cached != null)
+            return cached;
+
+        try
+        {
+            var response = await _http.GetFromJsonAsync<ScryfallListResponse<ScryfallSymbolResponse>>("symbology");
+
+            var symbols = (response?.Data ?? [])
+                .Select(s => new ManaSymbolDto
+                {
+                    Symbol            = s.Symbol,
+                    SvgUri            = s.SvgUri,
+                    Description       = s.Description,
+                    Cmc               = s.Cmc,
+                    AppearsInManaCosts = s.AppearsInManaCosts,
+                    Colors            = s.Colors ?? []
+                })
+                .ToList();
+
+            var result = new SymbologyDto { Symbols = symbols };
+            _cache.Set(cacheKey, result, SymbologyCacheDuration);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Scryfall symbology fetch failed");
+            return new SymbologyDto();
+        }
+    }
+
     // ── Internal Scryfall response shapes ────────────────────────────────────
 
-    private sealed class ScryfallAutocompleteResponse
+    private sealed class ScryfallListResponse<T>
     {
         [JsonPropertyName("data")]
-        public List<string> Data { get; set; } = new();
+        public List<T> Data { get; set; } = new();
 
-        [JsonPropertyName("total_values")]
-        public int TotalValues { get; set; }
+        [JsonPropertyName("total_cards")]
+        public int TotalCards { get; set; }
+    }
+
+    private sealed class ScryfallSearchResponse
+    {
+        [JsonPropertyName("data")]
+        public List<ScryfallCardResponse> Data { get; set; } = new();
+
+        [JsonPropertyName("total_cards")]
+        public int TotalCards { get; set; }
+    }
+
+    private sealed class ScryfallSymbolResponse
+    {
+        [JsonPropertyName("symbol")]
+        public string Symbol { get; set; } = string.Empty;
+
+        [JsonPropertyName("svg_uri")]
+        public string SvgUri { get; set; } = string.Empty;
+
+        [JsonPropertyName("description")]
+        public string? Description { get; set; }
+
+        [JsonPropertyName("cmc")]
+        public decimal Cmc { get; set; }
+
+        [JsonPropertyName("appears_in_mana_costs")]
+        public bool AppearsInManaCosts { get; set; }
+
+        [JsonPropertyName("colors")]
+        public List<string>? Colors { get; set; }
     }
 
     private sealed class ScryfallCardResponse
@@ -162,4 +240,3 @@ public class ScryfallService : IScryfallService
         public Dictionary<string, string>? ImageUris { get; set; }
     }
 }
-

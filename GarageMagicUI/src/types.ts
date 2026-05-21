@@ -1,6 +1,6 @@
 ﻿export type Quarter = 'Q1' | 'Q2' | 'Q3' | 'Q4'
 export type MatchType = 'OneVsOneVsOne' | 'OneVsOneVsOneVsOne' | 'FivePlayerSheriff' | 'SixPlayerSheriff'
-export type HiddenRole = 'Sheriff' | 'Deputy' | 'Red'
+export type HiddenRole = 'Sheriff' | 'Deputy' | 'Red' | 'Renegade' | 'Matriarch' | 'Outlaw'
 
 // Auth
 export interface AuthUser {

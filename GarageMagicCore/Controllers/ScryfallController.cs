@@ -58,5 +58,19 @@ public class ScryfallController : ControllerBase
             ? NotFound(new { error = $"No card found matching '{name}'." })
             : Ok(card);
     }
+
+    /// <summary>
+    /// GET /api/scryfall/symbology
+    /// Returns the full Scryfall mana symbol list, each with an SVG URI.
+    /// Use this to render mana costs client-side (e.g. parse "{3}{W}{U}" into symbol images).
+    /// Results are cached server-side for 7 days.
+    /// </summary>
+    [HttpGet("symbology")]
+    [ProducesResponseType(typeof(SymbologyDto), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSymbology()
+    {
+        var result = await _scryfall.GetSymbologyAsync();
+        return Ok(result);
+    }
 }
 
