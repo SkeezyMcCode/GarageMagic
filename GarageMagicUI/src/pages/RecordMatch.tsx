@@ -51,36 +51,71 @@ function resolveRoleColor(input: string) {
     black: '#111827',
   }
   const key = input.trim().toLowerCase()
-  return named[key] ?? input
+  if (named[key]) return named[key]
+  if (key.includes('white')) return named.white
+  if (key.includes('blue')) return named.blue
+  if (key.includes('red') || key.includes('renegade')) return named.red
+  if (key.includes('green') || key.includes('matriarch')) return named.green
+  if (key.includes('black') || key.includes('outlaw')) return named.black
+  return input
+}
+
+function inferRoleColor(role: SheriffRoleDto) {
+  const resolved = resolveRoleColor(role.color || '')
+  if (resolved.startsWith('#') && resolved.length === 7) return resolved
+  const roleKey = `${role.role} ${role.label}`.toLowerCase()
+  if (roleKey.includes('sheriff')) return '#ffffff'
+  if (roleKey.includes('deputy')) return '#60a5fa'
+  if (roleKey.includes('renegade') || roleKey.includes('red')) return '#f87171'
+  if (roleKey.includes('matriarch')) return '#4ade80'
+  if (roleKey.includes('outlaw')) return '#111827'
+  return '#7c3aed'
+}
+
+function inferManaSymbol(role: SheriffRoleDto) {
+  if (role.manaSymbol?.trim()) return normalizeManaSymbol(role.manaSymbol)
+  const roleKey = `${role.role} ${role.label}`.toLowerCase()
+  if (roleKey.includes('sheriff')) return '{W}'
+  if (roleKey.includes('deputy')) return '{U}'
+  if (roleKey.includes('renegade') || roleKey.includes('red')) return '{R}'
+  if (roleKey.includes('matriarch')) return '{G}'
+  if (roleKey.includes('outlaw')) return '{B}'
+  return ''
 }
 
 function roleButtonStyle(color: string, selected: boolean) {
-  const resolved = resolveRoleColor(color)
+  const resolved = color
 
   // Strong defaults when backend sends unexpected color values.
   if (!resolved.startsWith('#') || resolved.length !== 7) {
     return selected
       ? { backgroundColor: '#7c3aed', borderColor: '#7c3aed', color: '#ffffff' }
-      : { backgroundColor: 'rgba(55, 65, 81, 0.95)', borderColor: '#6b7280', color: '#e5e7eb' }
+      : { backgroundColor: 'rgba(55, 65, 81, 0.95)', borderColor: '#6b7280', color: '#ffffff' }
   }
 
   // Renegade red gets extra contrast in both states.
   if (resolved.toLowerCase() === '#f87171') {
     return selected
       ? { backgroundColor: '#ef4444', borderColor: '#ef4444', color: '#ffffff' }
-      : { backgroundColor: '#1f1b1b', borderColor: '#ef4444', color: '#fca5a5' }
+      : { backgroundColor: '#2a1717', borderColor: '#ef4444', color: '#ffffff' }
   }
 
   // White role needs dark text when selected.
   if (resolved.toLowerCase() === '#ffffff') {
     return selected
-      ? { backgroundColor: '#ffffff', borderColor: '#d1d5db', color: '#111827' }
-      : { backgroundColor: '#1f2937', borderColor: '#9ca3af', color: '#f9fafb' }
+      ? { backgroundColor: '#4b5563', borderColor: '#e5e7eb', color: '#ffffff' }
+      : { backgroundColor: '#1f2937', borderColor: '#9ca3af', color: '#ffffff' }
+  }
+
+  if (resolved.toLowerCase() === '#111827') {
+    return selected
+      ? { backgroundColor: '#111827', borderColor: '#9ca3af', color: '#ffffff' }
+      : { backgroundColor: '#1f2937', borderColor: '#6b7280', color: '#ffffff' }
   }
 
   return selected
     ? { backgroundColor: resolved, borderColor: resolved, color: '#ffffff' }
-    : { backgroundColor: colorToRgba(resolved, 0.25), borderColor: colorToRgba(resolved, 0.65), color: '#e5e7eb' }
+    : { backgroundColor: colorToRgba(resolved, 0.25), borderColor: colorToRgba(resolved, 0.65), color: '#ffffff' }
 }
 
 
@@ -284,7 +319,8 @@ export default function RecordMatch() {
                     {roleOptions.map(role => {
                       const selected = p.hiddenRole === role.value
                       const disabled = !selected && !roleAllowsMultiple(role) && participants.some((other, idx) => idx !== i && other.hiddenRole === role.value)
-                      const buttonStyle = roleButtonStyle(role.color || '#7c3aed', selected)
+                      const buttonStyle = roleButtonStyle(inferRoleColor(role), selected)
+                      const manaSymbol = inferManaSymbol(role)
                       return (
                       <button
                         key={role.value}
@@ -296,7 +332,7 @@ export default function RecordMatch() {
                         className={`flex-1 text-sm py-2 rounded-lg border transition-colors ${disabled ? 'opacity-35 cursor-not-allowed' : 'hover:brightness-110'}`}
                       >
                         <span className="inline-flex items-center justify-center gap-1.5 w-full">
-                          {role.manaSymbol && <ManaCostSymbols manaCost={normalizeManaSymbol(role.manaSymbol)} />}
+                          {manaSymbol && <ManaCostSymbols manaCost={manaSymbol} />}
                           <span className="leading-none">{role.label}</span>
                         </span>
                       </button>
