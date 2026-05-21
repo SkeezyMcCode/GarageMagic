@@ -162,6 +162,14 @@ public class UsersController : ControllerBase
         return Ok(users);
     }
 
+    /// <summary>GET /api/users/selectable - Get all players eligible for match participation (approved users + guests)</summary>
+    [HttpGet("selectable")]
+    [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetSelectable()
+    {
+        return Ok(await _userService.GetSelectableAsync());
+    }
+
     /// <summary>GET /api/users/{id} - Get user by ID</summary>
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]

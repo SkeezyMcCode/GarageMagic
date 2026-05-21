@@ -42,10 +42,22 @@ public class UserStatsConfiguration : IEntityTypeConfiguration<UserStats>
         builder.Property(us => us.DeputyGamesWon)
             .HasDefaultValue(0);
         
-        builder.Property(us => us.RedGamesPlayed)
+        builder.Property(us => us.OutlawGamesPlayed)
             .HasDefaultValue(0);
         
-        builder.Property(us => us.RedGamesWon)
+        builder.Property(us => us.OutlawGamesWon)
+            .HasDefaultValue(0);
+        
+        builder.Property(us => us.RenegadeGamesPlayed)
+            .HasDefaultValue(0);
+        
+        builder.Property(us => us.RenegadeGamesWon)
+            .HasDefaultValue(0);
+        
+        builder.Property(us => us.MatriarchTriggered)
+            .HasDefaultValue(0);
+        
+        builder.Property(us => us.MatriarchWins)
             .HasDefaultValue(0);
         
         builder.Property(us => us.WinsPerDeckJson)
@@ -54,9 +66,7 @@ public class UserStatsConfiguration : IEntityTypeConfiguration<UserStats>
         builder.Property(us => us.CreatedAt)
             .IsRequired();
         
-        // Composite index - one UserStats per User per Season
         builder.HasIndex(us => new { us.UserId, us.SeasonId })
             .IsUnique();
     }
 }
-

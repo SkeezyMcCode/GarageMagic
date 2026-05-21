@@ -43,6 +43,28 @@ public class UserService : IUserService
         return users.Select(MapToDto).ToList();
     }
 
+    public async Task<List<UserDto>> GetSelectableAsync()
+    {
+        // Returns all players valid for match participation:
+        // approved regular users + guests, excluding soft-deleted merged accounts
+        return await _context.Users
+            .Where(u => u.IsApproved && !u.Username.StartsWith("__merged_"))
+            .OrderBy(u => u.IsGuest)   // real players first, guests after
+            .ThenBy(u => u.Username)
+            .Select(u => new UserDto
+            {
+                Id = u.Id,
+                Username = u.Username,
+                Email = u.Email,
+                CurrentPrestigeLevel = u.CurrentPrestigeLevel,
+                CreatedAt = u.CreatedAt,
+                IsApproved = u.IsApproved,
+                IsAdmin = u.IsAdmin,
+                IsGuest = u.IsGuest
+            })
+            .ToListAsync();
+    }
+
     public async Task<UserDto?> GetByIdAsync(int id)
     {
         var user = await _context.Users.FindAsync(id);
@@ -305,8 +327,12 @@ public class UserService : IUserService
                     existing.SheriffGamesWon    += gs.SheriffGamesWon;
                     existing.DeputyGamesPlayed  += gs.DeputyGamesPlayed;
                     existing.DeputyGamesWon     += gs.DeputyGamesWon;
-                    existing.RedGamesPlayed     += gs.RedGamesPlayed;
-                    existing.RedGamesWon        += gs.RedGamesWon;
+                    existing.OutlawGamesPlayed  += gs.OutlawGamesPlayed;
+                    existing.OutlawGamesWon     += gs.OutlawGamesWon;
+                    existing.RenegadeGamesPlayed += gs.RenegadeGamesPlayed;
+                    existing.RenegadeGamesWon   += gs.RenegadeGamesWon;
+                    existing.MatriarchTriggered += gs.MatriarchTriggered;
+                    existing.MatriarchWins      += gs.MatriarchWins;
                     existing.UpdatedAt           = DateTime.UtcNow;
                     _context.UserStats.Remove(gs);
                 }

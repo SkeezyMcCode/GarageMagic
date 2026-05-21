@@ -78,8 +78,12 @@ public class StatsService : IStatsService
             SheriffGamesWon = stats.SheriffGamesWon,
             DeputyGamesPlayed = stats.DeputyGamesPlayed,
             DeputyGamesWon = stats.DeputyGamesWon,
-            RedGamesPlayed = stats.RedGamesPlayed,
-            RedGamesWon = stats.RedGamesWon,
+            OutlawGamesPlayed = stats.OutlawGamesPlayed,
+            OutlawGamesWon = stats.OutlawGamesWon,
+            RenegadeGamesPlayed = stats.RenegadeGamesPlayed,
+            RenegadeGamesWon = stats.RenegadeGamesWon,
+            MatriarchTriggered = stats.MatriarchTriggered,
+            MatriarchWins = stats.MatriarchWins,
             PrestigeLevel = stats.User.CurrentPrestigeLevel
         };
     }

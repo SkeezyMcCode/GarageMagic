@@ -21,7 +21,13 @@ public class MatchService : IMatchService
         var season = await _context.Seasons.FirstOrDefaultAsync(s => s.IsActive)
             ?? throw new InvalidOperationException("No active season found. Please create a season first.");
 
-        // Determine sheriff from participants
+        bool isSheriff = dto.MatchType is MatchType.FivePlayerSheriff or MatchType.SixPlayerSheriff;
+
+        // For Sheriff games, resolve winners server-side based on role rules
+        var resolvedWinnerIds = isSheriff
+            ? ResolveSheriffWinners(dto)
+            : dto.WinnerUserIds;
+
         int? sheriffUserId = dto.Participants
             .FirstOrDefault(p => p.HiddenRole == HiddenRole.Sheriff)?.UserId;
 
@@ -30,13 +36,13 @@ public class MatchService : IMatchService
             DeckId = dto.DeckId,
             MatchType = dto.MatchType,
             MatchDate = dto.MatchDate == default ? DateTime.UtcNow : dto.MatchDate,
-            SheriffUserId = sheriffUserId
+            SheriffUserId = sheriffUserId,
+            MatriarchUserId = dto.MatriarchUserId
         };
 
         _context.Matches.Add(match);
         await _context.SaveChangesAsync();
 
-        // Create participants
         foreach (var p in dto.Participants)
         {
             _context.MatchParticipants.Add(new MatchParticipant
@@ -44,12 +50,12 @@ public class MatchService : IMatchService
                 MatchId = match.Id,
                 UserId = p.UserId,
                 DeckId = p.DeckId,
-                HiddenRole = p.HiddenRole
+                HiddenRole = p.HiddenRole,
+                FinalRole = p.FinalRole ?? p.HiddenRole
             });
         }
 
-        // Create winners
-        foreach (var winnerId in dto.WinnerUserIds)
+        foreach (var winnerId in resolvedWinnerIds)
         {
             _context.MatchWinners.Add(new MatchWinner
             {
@@ -60,16 +66,12 @@ public class MatchService : IMatchService
 
         await _context.SaveChangesAsync();
 
-        // Get WinsPerPrestigeLevel setting
         var settingValue = await _context.AppSettings
             .Where(s => s.SettingKey == SettingKeys.WinsPerPrestigeLevel)
             .Select(s => s.SettingValue)
             .FirstOrDefaultAsync();
         int winsPerPrestige = int.TryParse(settingValue, out var w) ? w : 5;
 
-        bool isSheriff = dto.MatchType is MatchType.FivePlayerSheriff or MatchType.SixPlayerSheriff;
-
-        // Update UserStats for each participant
         foreach (var p in dto.Participants)
         {
             var stats = await _context.UserStats
@@ -81,7 +83,7 @@ public class MatchService : IMatchService
                 _context.UserStats.Add(stats);
             }
 
-            bool isWinner = dto.WinnerUserIds.Contains(p.UserId);
+            bool isWinner = resolvedWinnerIds.Contains(p.UserId);
             stats.TotalMatches++;
 
             if (isWinner)
@@ -91,7 +93,6 @@ public class MatchService : IMatchService
                 stats.Wins1v1v1v1 += dto.MatchType == MatchType.OneVsOneVsOneVsOne ? 1 : 0;
                 stats.WinsSheriff += isSheriff ? 1 : 0;
 
-                // Update deck win JSON
                 if (p.DeckId.HasValue)
                 {
                     var deckWins = string.IsNullOrEmpty(stats.WinsPerDeckJson)
@@ -107,10 +108,12 @@ public class MatchService : IMatchService
                 stats.TotalLosses++;
             }
 
-            // Sheriff role stats
             if (isSheriff && p.HiddenRole.HasValue)
             {
-                switch (p.HiddenRole.Value)
+                // Use FinalRole for stat bucketing so Matriarch shows as Sheriff at end
+                var roleForStats = p.FinalRole ?? p.HiddenRole.Value;
+
+                switch (roleForStats)
                 {
                     case HiddenRole.Sheriff:
                         stats.SheriffGamesPlayed++;
@@ -120,18 +123,30 @@ public class MatchService : IMatchService
                         stats.DeputyGamesPlayed++;
                         if (isWinner) stats.DeputyGamesWon++;
                         break;
-                    case HiddenRole.Red:
-                        stats.RedGamesPlayed++;
-                        if (isWinner) stats.RedGamesWon++;
+                    case HiddenRole.Outlaw:
+                        stats.OutlawGamesPlayed++;
+                        if (isWinner) stats.OutlawGamesWon++;
                         break;
+                    case HiddenRole.Renegade:
+                        stats.RenegadeGamesPlayed++;
+                        if (isWinner) stats.RenegadeGamesWon++;
+                        break;
+                }
+
+                // Matriarch: started as Outlaw, ended as Sheriff
+                if (p.HiddenRole == HiddenRole.Outlaw &&
+                    p.FinalRole == HiddenRole.Sheriff &&
+                    dto.MatriarchUserId == p.UserId)
+                {
+                    stats.MatriarchTriggered++;
+                    if (isWinner) stats.MatriarchWins++;
                 }
             }
         }
 
         await _context.SaveChangesAsync();
 
-        // Update prestige for winners
-        foreach (var winnerId in dto.WinnerUserIds)
+        foreach (var winnerId in resolvedWinnerIds)
         {
             var stats = await _context.UserStats
                 .FirstAsync(s => s.UserId == winnerId && s.SeasonId == season.Id);
@@ -156,6 +171,44 @@ public class MatchService : IMatchService
 
         return await GetByIdAsync(match.Id)
             ?? throw new InvalidOperationException("Failed to retrieve created match.");
+    }
+
+    /// <summary>
+    /// Resolves winners for Sheriff games based on role rules:
+    /// - Sheriff team wins → Deputy auto-added as winner even if dead
+    /// - Sheriff dies → Outlaws win; Deputy removed from winners
+    /// - Renegade: frontend passes them in WinnerUserIds if they won
+    /// - Matriarch: if set, uses that player as the "final Sheriff" for win resolution
+    /// </summary>
+    private static List<int> ResolveSheriffWinners(CreateMatchDto dto)
+    {
+        var sheriffParticipant = dto.Participants.First(p => p.HiddenRole == HiddenRole.Sheriff);
+
+        // Final sheriff is the Matriarch if a swap happened, otherwise the original
+        int finalSheriffId = dto.MatriarchUserId ?? sheriffParticipant.UserId;
+        bool finalSheriffWon = dto.WinnerUserIds.Contains(finalSheriffId);
+
+        var winners = new HashSet<int>(dto.WinnerUserIds);
+
+        if (finalSheriffWon)
+        {
+            // Sheriff team wins — Deputy also wins regardless
+            var deputyId = dto.Participants.FirstOrDefault(p => p.HiddenRole == HiddenRole.Deputy)?.UserId;
+            if (deputyId.HasValue)
+                winners.Add(deputyId.Value);
+        }
+        else
+        {
+            // Sheriff died — Deputy can't win, Outlaws win
+            var deputyId = dto.Participants.FirstOrDefault(p => p.HiddenRole == HiddenRole.Deputy)?.UserId;
+            if (deputyId.HasValue)
+                winners.Remove(deputyId.Value);
+
+            foreach (var outlaw in dto.Participants.Where(p => p.HiddenRole == HiddenRole.Outlaw))
+                winners.Add(outlaw.UserId);
+        }
+
+        return winners.ToList();
     }
 
     public async Task<MatchDto?> GetByIdAsync(int id)
@@ -215,6 +268,7 @@ public class MatchService : IMatchService
         MatchType = match.MatchType,
         MatchDate = match.MatchDate,
         SheriffUserId = match.SheriffUserId,
+        MatriarchUserId = match.MatriarchUserId,
         Winners = match.Winners.Select(w => new MatchWinnerDto
         {
             UserId = w.UserId,
@@ -226,7 +280,8 @@ public class MatchService : IMatchService
             Username = p.User.Username,
             DeckId = p.DeckId,
             DeckName = p.Deck?.DeckName,
-            HiddenRole = p.HiddenRole
+            HiddenRole = p.HiddenRole,
+            FinalRole = p.FinalRole
         }).ToList()
     };
 }

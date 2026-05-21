@@ -78,5 +78,58 @@ public class MatchesController : ControllerBase
         var matches = await _matchService.GetBySeasonAsync(seasonId);
         return Ok(matches);
     }
+
+    /// <summary>GET /api/matches/sheriff-roles - Role metadata for UI (colors, labels, win conditions)</summary>
+    [HttpGet("sheriff-roles")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(List<SheriffRoleMetadataDto>), StatusCodes.Status200OK)]
+    public IActionResult GetSheriffRoles()
+    {
+        var roles = new List<SheriffRoleMetadataDto>
+        {
+            new()
+            {
+                Role = "Sheriff",
+                Label = "Sheriff",
+                Color = "#FFFFFF",
+                TextColor = "#000000",
+                MaxCount = 1,
+                GameModeOnly = null,
+                WinCondition = "Survive the game. Deputy wins with you."
+            },
+            new()
+            {
+                Role = "Deputy",
+                Label = "Deputy",
+                Color = "#3B82F6",
+                TextColor = "#FFFFFF",
+                MaxCount = 1,
+                GameModeOnly = null,
+                WinCondition = "Sheriff's team wins. You win even if you die, as long as the Sheriff survives."
+            },
+            new()
+            {
+                Role = "Outlaw",
+                Label = "Outlaw",
+                Color = "#EF4444",
+                TextColor = "#FFFFFF",
+                MaxCount = 2,
+                GameModeOnly = null,
+                WinCondition = "Kill the Sheriff. Both Outlaws win if the Sheriff dies, even if one is already dead. Delivering the killing blow triggers the Matriarch swap."
+            },
+            new()
+            {
+                Role = "Renegade",
+                Label = "Renegade",
+                Color = "#111827",
+                TextColor = "#FFFFFF",
+                MaxCount = 1,
+                GameModeOnly = "SixPlayerSheriff",
+                WinCondition = "Be the last player standing. You cannot kill the Sheriff first — eliminate Outlaws and the Deputy before going for the Sheriff."
+            }
+        };
+
+        return Ok(roles);
+    }
 }
 

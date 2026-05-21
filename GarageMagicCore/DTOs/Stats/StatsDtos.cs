@@ -26,8 +26,14 @@ public class UserStatsDto
     public int SheriffGamesWon { get; set; }
     public int DeputyGamesPlayed { get; set; }
     public int DeputyGamesWon { get; set; }
-    public int RedGamesPlayed { get; set; }
-    public int RedGamesWon { get; set; }
+    public int OutlawGamesPlayed { get; set; }
+    public int OutlawGamesWon { get; set; }
+    public int RenegadeGamesPlayed { get; set; }
+    public int RenegadeGamesWon { get; set; }
+
+    // Matriarch stats
+    public int MatriarchTriggered { get; set; }
+    public int MatriarchWins { get; set; }
 
     // Prestige
     public int PrestigeLevel { get; set; }

@@ -15,6 +15,9 @@ public class MatchParticipantConfiguration : IEntityTypeConfiguration<MatchParti
         builder.Property(mp => mp.HiddenRole)
             .HasConversion<string>();
         
+        builder.Property(mp => mp.FinalRole)
+            .HasConversion<string>();
+        
         builder.Property(mp => mp.CreatedAt)
             .IsRequired();
         

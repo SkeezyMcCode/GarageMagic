@@ -37,6 +37,11 @@ public class MatchConfiguration : IEntityTypeConfiguration<Match>
             .HasForeignKey(m => m.SheriffUserId)
             .OnDelete(DeleteBehavior.SetNull);
         
+        builder.HasOne(m => m.MatriarchUser)
+            .WithMany()
+            .HasForeignKey(m => m.MatriarchUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+        
         builder.HasMany(m => m.Winners)
             .WithOne(w => w.Match)
             .HasForeignKey(w => w.MatchId)
