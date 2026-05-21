@@ -32,6 +32,8 @@ public static class DbSeeder
     private static async Task SeedAdminsAsync(GarageMagicDbContext context, IConfiguration config)
     {
         var adminConfigs = config.GetSection("SeedAdmins").GetChildren().ToList();
+        var activeSeason = await context.Seasons.FirstOrDefaultAsync(s => s.IsActive);
+
         foreach (var adminConfig in adminConfigs)
         {
             var username = adminConfig["Username"];
@@ -44,7 +46,7 @@ public static class DbSeeder
             if (await context.Users.AnyAsync(u => u.Username == username))
                 continue; // Already exists
 
-            context.Users.Add(new User
+            var user = new User
             {
                 Username = username,
                 Email = email ?? $"{username}@garagemagic.local",
@@ -52,9 +54,22 @@ public static class DbSeeder
                 IsApproved = true,
                 IsAdmin = true,
                 CreatedAt = DateTime.UtcNow
-            });
+            };
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            // Create UserStats for the active season so the admin appears in the players list
+            if (activeSeason != null)
+            {
+                context.UserStats.Add(new UserStats
+                {
+                    UserId = user.Id,
+                    SeasonId = activeSeason.Id,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await context.SaveChangesAsync();
+            }
         }
-        await context.SaveChangesAsync();
     }
 
     private static async Task SeedAppSettingsAsync(GarageMagicDbContext context)

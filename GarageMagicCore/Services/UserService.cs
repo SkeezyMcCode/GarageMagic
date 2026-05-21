@@ -124,8 +124,28 @@ public class UserService : IUserService
     {
         var user = await _context.Users.FindAsync(id);
         if (user == null) return null;
+
         user.IsApproved = true;
         await _context.SaveChangesAsync();
+
+        // Create UserStats for the active season so the player appears in the leaderboard immediately
+        var activeSeason = await _context.Seasons.FirstOrDefaultAsync(s => s.IsActive);
+        if (activeSeason != null)
+        {
+            var statsExist = await _context.UserStats
+                .AnyAsync(s => s.UserId == id && s.SeasonId == activeSeason.Id);
+            if (!statsExist)
+            {
+                _context.UserStats.Add(new Models.UserStats
+                {
+                    UserId = id,
+                    SeasonId = activeSeason.Id,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+        }
+
         return MapToDto(user);
     }
 
