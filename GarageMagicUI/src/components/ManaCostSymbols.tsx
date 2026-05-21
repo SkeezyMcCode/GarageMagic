@@ -1,6 +1,11 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
-import { getScryfallSymbology } from '../api'
-import type { ScryfallSymbolDto } from '../types'
+import * as apiModule from '../api'
+
+interface ScryfallSymbolDto {
+  symbol: string
+  svgUri: string
+  description?: string
+}
 
 let symbologyCache: ScryfallSymbolDto[] | null = null
 let symbologyPromise: Promise<ScryfallSymbolDto[]> | null = null
@@ -8,16 +13,22 @@ let symbologyPromise: Promise<ScryfallSymbolDto[]> | null = null
 function loadSymbology(): Promise<ScryfallSymbolDto[]> {
   if (symbologyCache) return Promise.resolve(symbologyCache)
   if (!symbologyPromise) {
-    symbologyPromise = getScryfallSymbology().then(r => {
-      symbologyCache = r.symbols
-      return r.symbols
+    const getSymbology = (apiModule as unknown as {
+      getScryfallSymbology?: () => Promise<{ symbols: ScryfallSymbolDto[] }>
+    }).getScryfallSymbology
+
+    if (!getSymbology) return Promise.resolve([])
+
+    symbologyPromise = getSymbology().then(result => {
+      symbologyCache = result.symbols
+      return result.symbols
     })
   }
-  return symbologyPromise
+  return symbologyPromise ?? Promise.resolve([])
 }
 
 function parseManaCost(input: string) {
-  return input.match(/\{[^}]+\}/g) ?? []
+  return input.match(/\{[^}]+}/g) ?? []
 }
 
 export default function ManaCostSymbols({ manaCost }: { manaCost?: string }) {
