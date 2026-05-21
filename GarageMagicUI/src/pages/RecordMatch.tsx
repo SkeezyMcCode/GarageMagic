@@ -60,27 +60,29 @@ function resolveRoleColor(input: string) {
   return input
 }
 
-function inferRoleColor(role: SheriffRoleDto) {
-  const resolved = resolveRoleColor(role.color || '')
-  if (resolved.startsWith('#') && resolved.length === 7) return resolved
-  const roleKey = `${role.role} ${role.label}`.toLowerCase()
-  if (roleKey.includes('sheriff')) return '#ffffff'
-  if (roleKey.includes('deputy')) return '#60a5fa'
-  if (roleKey.includes('renegade') || roleKey.includes('red')) return '#f87171'
-  if (roleKey.includes('matriarch')) return '#4ade80'
-  if (roleKey.includes('outlaw')) return '#111827'
-  return '#7c3aed'
+type CanonicalRole = 'sheriff' | 'deputy' | 'renegade' | 'matriarch' | 'outlaw' | 'unknown'
+
+function canonicalRole(role: SheriffRoleDto): CanonicalRole {
+  const raw = `${role.role} ${role.label}`.toLowerCase()
+  if (raw.includes('sheriff')) return 'sheriff'
+  if (raw.includes('deputy')) return 'deputy'
+  if (raw.includes('matriarch')) return 'matriarch'
+  if (raw.includes('outlaw')) return 'outlaw'
+  if (raw.includes('renegade') || raw.includes('red')) return 'renegade'
+  return 'unknown'
 }
 
-function inferManaSymbol(role: SheriffRoleDto) {
-  if (role.manaSymbol?.trim()) return normalizeManaSymbol(role.manaSymbol)
-  const roleKey = `${role.role} ${role.label}`.toLowerCase()
-  if (roleKey.includes('sheriff')) return '{W}'
-  if (roleKey.includes('deputy')) return '{U}'
-  if (roleKey.includes('renegade') || roleKey.includes('red')) return '{R}'
-  if (roleKey.includes('matriarch')) return '{G}'
-  if (roleKey.includes('outlaw')) return '{B}'
-  return ''
+function roleVisual(role: SheriffRoleDto) {
+  const kind = canonicalRole(role)
+  const fallbackColor = resolveRoleColor(role.color || '#7c3aed')
+
+  if (kind === 'sheriff') return { color: '#ffffff', manaSymbol: '{W}' }
+  if (kind === 'deputy') return { color: '#60a5fa', manaSymbol: '{U}' }
+  if (kind === 'renegade') return { color: '#ef4444', manaSymbol: '{R}' }
+  if (kind === 'matriarch') return { color: '#22c55e', manaSymbol: '{G}' }
+  if (kind === 'outlaw') return { color: '#111827', manaSymbol: '{B}' }
+
+  return { color: fallbackColor, manaSymbol: normalizeManaSymbol(role.manaSymbol) || '' }
 }
 
 function roleButtonStyle(color: string, selected: boolean) {
@@ -319,8 +321,9 @@ export default function RecordMatch() {
                     {roleOptions.map(role => {
                       const selected = p.hiddenRole === role.value
                       const disabled = !selected && !roleAllowsMultiple(role) && participants.some((other, idx) => idx !== i && other.hiddenRole === role.value)
-                      const buttonStyle = roleButtonStyle(inferRoleColor(role), selected)
-                      const manaSymbol = inferManaSymbol(role)
+                      const visual = roleVisual(role)
+                      const buttonStyle = roleButtonStyle(visual.color, selected)
+                      const manaSymbol = visual.manaSymbol
                       return (
                       <button
                         key={role.value}
@@ -329,7 +332,9 @@ export default function RecordMatch() {
                         disabled={disabled}
                         title={role.winCondition ?? role.label}
                         style={buttonStyle}
-                        className={`flex-1 text-sm py-2 rounded-lg border transition-colors ${disabled ? 'opacity-35 cursor-not-allowed' : 'hover:brightness-110'}`}
+                        className={`flex-1 text-sm py-2 rounded-lg border transition-colors ${
+                          selected ? '' : 'bg-gray-800 border-gray-700 text-gray-300'
+                        } ${disabled ? 'opacity-35 cursor-not-allowed' : 'hover:brightness-110 hover:border-gray-500'}`}
                       >
                         <span className="inline-flex items-center justify-center gap-1.5 w-full">
                           {manaSymbol && <ManaCostSymbols manaCost={manaSymbol} />}
