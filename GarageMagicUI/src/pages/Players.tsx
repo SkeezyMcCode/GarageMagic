@@ -14,19 +14,34 @@ export default function Players() {
   const [formError, setFormError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  const load = async () => {
-    try {
-      const s = await getCurrentSeason()
-      setSeason(s)
-      setPlayers(await getLeaderboard(s.id))
-    } catch {
-      setError('Could not load players. Is the API running?')
-    } finally {
-      setLoading(false)
-    }
+  const loadPlayers = async () => {
+    const s = await getCurrentSeason()
+    const leaderboard = await getLeaderboard(s.id)
+    return { s, leaderboard }
   }
 
-  useEffect(() => { load() }, [])
+  const applyPlayers = (s: SeasonDto, leaderboard: UserStandingDto[]) => {
+    setSeason(s)
+    setPlayers(leaderboard)
+  }
+
+  useEffect(() => {
+    let active = true
+
+    void (async () => {
+      try {
+        const { s, leaderboard } = await loadPlayers()
+        if (!active) return
+        applyPlayers(s, leaderboard)
+      } catch {
+        if (active) setError('Could not load players. Is the API running?')
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
+
+    return () => { active = false }
+  }, [])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,7 +51,8 @@ export default function Players() {
       await registerUser(form)
       setShowForm(false)
       setForm({ username: '', email: '', password: '' })
-      await load()
+      const { s, leaderboard } = await loadPlayers()
+      applyPlayers(s, leaderboard)
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       setFormError(msg ?? 'Registration failed')

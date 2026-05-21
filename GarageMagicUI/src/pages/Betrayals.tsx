@@ -13,14 +13,30 @@ export default function Betrayals() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
-  const load = async () => {
-    try {
-      const [b, p] = await Promise.all([getRecentBetrayals(50), getLeaderboard()])
-      setBetrayals(b); setPlayers(p)
-    } catch { setError('Could not load betrayals.') }
-    finally { setLoading(false) }
+  const loadBetrayals = async () => Promise.all([getRecentBetrayals(50), getLeaderboard()])
+
+  const applyBetrayals = (b: BetrayalDto[], p: UserStandingDto[]) => {
+    setBetrayals(b)
+    setPlayers(p)
   }
-  useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    let active = true
+
+    void (async () => {
+      try {
+        const [b, p] = await loadBetrayals()
+        if (!active) return
+        applyBetrayals(b, p)
+      } catch {
+        if (active) setError('Could not load betrayals.')
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
+
+    return () => { active = false }
+  }, [])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,7 +47,8 @@ export default function Betrayals() {
       await createBetrayal({ ...form, betrayalDate: new Date().toISOString() })
       setShowForm(false)
       setForm({ betrayerUserId: 0, victimUserId: 0, description: '' })
-      await load()
+      const [b, p] = await loadBetrayals()
+      applyBetrayals(b, p)
     } catch (err: unknown) {
       setSubmitError((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Failed to record betrayal')
     } finally { setSubmitting(false) }

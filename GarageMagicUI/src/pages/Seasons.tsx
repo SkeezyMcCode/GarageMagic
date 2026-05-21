@@ -11,20 +11,36 @@ export default function Seasons() {
   const [error, setError] = useState('')
   const [rollingOver, setRollingOver] = useState(false)
 
-  const load = async () => {
-    try {
-      const all = await getAllSeasons()
-      setSeasons(all)
-      const active = all.find(s => s.isActive) ?? all[0]
-      if (active) {
-        setSelected(active.id)
-        setStandings(await getSeasonStandings(active.id))
-      }
-    } catch { setError('Could not load seasons.') }
-    finally { setLoading(false) }
+  const loadSeasons = async () => {
+    const all = await getAllSeasons()
+    const active = all.find(s => s.isActive) ?? all[0]
+    const activeStandings = active ? await getSeasonStandings(active.id) : null
+    return { all, active, activeStandings }
   }
 
-  useEffect(() => { load() }, [])
+  const applySeasons = (all: SeasonDto[], active: SeasonDto | undefined, activeStandings: SeasonStandingsDto | null) => {
+    setSeasons(all)
+    if (active) setSelected(active.id)
+    setStandings(activeStandings)
+  }
+
+  useEffect(() => {
+    let active = true
+
+    void (async () => {
+      try {
+        const data = await loadSeasons()
+        if (!active) return
+        applySeasons(data.all, data.active, data.activeStandings)
+      } catch {
+        if (active) setError('Could not load seasons.')
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
+
+    return () => { active = false }
+  }, [])
 
   const selectSeason = async (id: number) => {
     setSelected(id)
@@ -35,7 +51,11 @@ export default function Seasons() {
   const doRollover = async () => {
     if (!confirm('Roll over to the next season? This will deactivate the current season.')) return
     setRollingOver(true)
-    try { await rolloverSeason(); await load() }
+    try {
+      await rolloverSeason()
+      const data = await loadSeasons()
+      applySeasons(data.all, data.active, data.activeStandings)
+    }
     catch (err: unknown) { alert((err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? 'Rollover failed') }
     finally { setRollingOver(false) }
   }

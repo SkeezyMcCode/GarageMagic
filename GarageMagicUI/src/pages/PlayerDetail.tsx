@@ -24,22 +24,34 @@ export default function PlayerDetail() {
   const [deckForm, setDeckForm] = useState({ deckName: '', commanderName: '', colorIdentity: '' })
   const [deckSubmitting, setDeckSubmitting] = useState(false)
 
-  const load = async () => {
-    try {
-      const season = await getCurrentSeason()
-      const [u, d, m, b] = await Promise.all([
-        getUserWithStats(userId),
-        getDecksByUser(userId),
-        getMatchesByUser(userId),
-        getBetrayalsByUser(userId),
-      ])
-      setUser(u); setDecks(d); setMatches(m); setBetrayals(b)
-      try { setStats(await getUserStats(userId, season.id)) } catch { /* no stats yet */ }
-    } catch { setError('Player not found') }
-    finally { setLoading(false) }
-  }
+  useEffect(() => {
+    let active = true
 
-  useEffect(() => { load() }, [userId])
+    void (async () => {
+      try {
+        const season = await getCurrentSeason()
+        const [u, d, m, b] = await Promise.all([
+          getUserWithStats(userId),
+          getDecksByUser(userId),
+          getMatchesByUser(userId),
+          getBetrayalsByUser(userId),
+        ])
+        const seasonStats = await getUserStats(userId, season.id).catch(() => null)
+        if (!active) return
+        setUser(u)
+        setDecks(d)
+        setMatches(m)
+        setBetrayals(b)
+        setStats(seasonStats)
+      } catch {
+        if (active) setError('Player not found')
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
+
+    return () => { active = false }
+  }, [userId])
 
   const submitDeck = async (e: React.FormEvent) => {
     e.preventDefault()

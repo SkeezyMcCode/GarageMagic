@@ -1,40 +1,27 @@
-﻿import { createContext, useContext, useEffect, useState } from 'react'
+﻿import { useState } from 'react'
+import { AuthContext } from './AuthContextValue'
+import type { AuthUser } from './authTypes'
 
-export interface AuthUser {
-  id: number
-  username: string
-  isAdmin: boolean
+function readStoredAuth() {
+  const storedToken = localStorage.getItem('gm_token')
+  const storedUser = localStorage.getItem('gm_user')
+
+  if (!storedToken || !storedUser) return { token: null, user: null as AuthUser | null }
+
+  try {
+    return { token: storedToken, user: JSON.parse(storedUser) as AuthUser }
+  } catch {
+    localStorage.removeItem('gm_token')
+    localStorage.removeItem('gm_user')
+    return { token: null, user: null as AuthUser | null }
+  }
 }
-
-interface AuthContextType {
-  user: AuthUser | null
-  token: string | null
-  isLoading: boolean
-  login: (token: string, user: AuthUser) => void
-  logout: () => void
-}
-
-const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null)
-  const [token, setToken] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const storedToken = localStorage.getItem('gm_token')
-    const storedUser = localStorage.getItem('gm_user')
-    if (storedToken && storedUser) {
-      try {
-        setToken(storedToken)
-        setUser(JSON.parse(storedUser))
-      } catch {
-        localStorage.removeItem('gm_token')
-        localStorage.removeItem('gm_user')
-      }
-    }
-    setIsLoading(false)
-  }, [])
+  const initialAuth = readStoredAuth()
+  const [user, setUser] = useState<AuthUser | null>(initialAuth.user)
+  const [token, setToken] = useState<string | null>(initialAuth.token)
+  const [isLoading] = useState(false)
 
   const login = (newToken: string, newUser: AuthUser) => {
     localStorage.setItem('gm_token', newToken)
@@ -57,9 +44,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
-}
 

@@ -1,10 +1,11 @@
 ﻿import { useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { loginUser, registerUser } from '../api'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { ErrorMsg } from '../components/Ui'
 
 export default function Login() {
-  const { login } = useAuth()
+  const { login, user } = useAuth()
   const [tab, setTab] = useState<'login' | 'register'>('login')
 
   const [loginForm, setLoginForm] = useState({ username: '', password: '' })
@@ -15,6 +16,9 @@ export default function Login() {
   const [regError, setRegError] = useState('')
   const [regSuccess, setRegSuccess] = useState(false)
   const [regLoading, setRegLoading] = useState(false)
+
+  // If already logged in (or just logged in), go to dashboard
+  if (user) return <Navigate to="/" replace />
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()

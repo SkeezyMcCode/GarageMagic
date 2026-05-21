@@ -13,30 +13,49 @@ export default function AdminPanel() {
   const [guestAdding, setGuestAdding] = useState(false)
   const [guestError, setGuestError] = useState('')
 
-  const load = async () => {
-    try {
-      const [p, g] = await Promise.all([getPendingUsers(), getGuests()])
-      setPending(p)
-      setGuests(g)
-    } catch {
-      setError('Could not load data.')
-    } finally {
-      setLoading(false)
-    }
+  const loadAdminData = async () => Promise.all([getPendingUsers(), getGuests()])
+
+  const applyAdminData = (p: PendingUserDto[], g: UserDto[]) => {
+    setPending(p)
+    setGuests(g)
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    let active = true
+
+    void (async () => {
+      try {
+        const [p, g] = await loadAdminData()
+        if (!active) return
+        applyAdminData(p, g)
+      } catch {
+        if (active) setError('Could not load data.')
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
+
+    return () => { active = false }
+  }, [])
 
   const approve = async (id: number) => {
     setActioning(id)
-    try { await approveUser(id); await load() }
+    try {
+      await approveUser(id)
+      const [p, g] = await loadAdminData()
+      applyAdminData(p, g)
+    }
     finally { setActioning(null) }
   }
 
   const reject = async (id: number) => {
     if (!confirm('Reject and delete this registration?')) return
     setActioning(id)
-    try { await rejectUser(id); await load() }
+    try {
+      await rejectUser(id)
+      const [p, g] = await loadAdminData()
+      applyAdminData(p, g)
+    }
     finally { setActioning(null) }
   }
 
@@ -47,7 +66,8 @@ export default function AdminPanel() {
     try {
       await createGuest({ displayName: guestName.trim() })
       setGuestName('')
-      await load()
+      const [p, g] = await loadAdminData()
+      applyAdminData(p, g)
     } catch {
       setGuestError('Could not create guest.')
     } finally {
@@ -58,7 +78,11 @@ export default function AdminPanel() {
   const removeGuest = async (id: number, name: string) => {
     if (!confirm(`Remove guest "${name}"? This will delete their match history.`)) return
     setActioning(id)
-    try { await deleteUser(id); await load() }
+    try {
+      await deleteUser(id)
+      const [p, g] = await loadAdminData()
+      applyAdminData(p, g)
+    }
     finally { setActioning(null) }
   }
 
