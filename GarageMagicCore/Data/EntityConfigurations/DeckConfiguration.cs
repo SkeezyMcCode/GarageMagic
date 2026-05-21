@@ -22,6 +22,12 @@ public class DeckConfiguration : IEntityTypeConfiguration<Deck>
         
         builder.Property(d => d.ColorIdentity)
             .HasMaxLength(10);
+
+        builder.Property(d => d.CommanderImageUri)
+            .HasMaxLength(500);
+
+        builder.Property(d => d.ScryfallId)
+            .HasMaxLength(40);
         
         builder.Property(d => d.IsActive)
             .HasDefaultValue(true);

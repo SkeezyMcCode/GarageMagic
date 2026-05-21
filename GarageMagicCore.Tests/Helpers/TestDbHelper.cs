@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-readonly using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using GarageMagicCore.Data;
 using GarageMagicCore.Models;
 

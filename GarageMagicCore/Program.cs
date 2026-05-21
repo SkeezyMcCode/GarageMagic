@@ -56,6 +56,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// In-memory cache (used by ScryfallService for 24-hour response caching)
+builder.Services.AddMemoryCache();
+
+// Scryfall HTTP client — User-Agent required by Scryfall ToS
+builder.Services.AddHttpClient<IScryfallService, ScryfallService>(client =>
+{
+    client.BaseAddress = new Uri("https://api.scryfall.com/");
+    client.DefaultRequestHeaders.Add("User-Agent", "GarageMagic/1.0 (https://garage-mtg.fun)");
+    client.DefaultRequestHeaders.Add("Accept", "application/json;q=0.9,*/*;q=0.8");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
+
 // Add controllers
 builder.Services.AddControllers();
 

@@ -33,6 +33,10 @@ public class DeckDto
     public string? ColorIdentity { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
+    /// <summary>Scryfall card image URI (normal size). Null if lookup failed or not yet run.</summary>
+    public string? CommanderImageUri { get; set; }
+    /// <summary>Scryfall card ID.</summary>
+    public string? ScryfallId { get; set; }
 }
 
 /// <summary>
@@ -45,4 +49,3 @@ public class DeckWithStatsDto : DeckDto
     public int Losses { get; set; }
     public decimal WinRate { get; set; }
 }
-

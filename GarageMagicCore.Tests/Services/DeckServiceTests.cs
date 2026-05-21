@@ -1,16 +1,29 @@
 ﻿using FluentAssertions;
 using GarageMagicCore.DTOs.Deck;
+using GarageMagicCore.DTOs.Scryfall;
 using GarageMagicCore.Services;
 using GarageMagicCore.Tests.Helpers;
 
 namespace GarageMagicCore.Tests.Services;
+
+/// <summary>
+/// No-op Scryfall stub — always returns null so deck tests stay fast and offline.
+/// </summary>
+file sealed class NullScryfallService : IScryfallService
+{
+    public Task<CommanderAutocompleteDto> AutocompleteCommanderAsync(string query, int limit = 20)
+        => Task.FromResult(new CommanderAutocompleteDto());
+
+    public Task<CommanderCardDto?> LookupCommanderAsync(string name)
+        => Task.FromResult<CommanderCardDto?>(null);
+}
 
 public class DeckServiceTests
 {
     private DeckService CreateService(out GarageMagicCore.Data.GarageMagicDbContext context)
     {
         context = TestDbHelper.CreateContext();
-        return new DeckService(context);
+        return new DeckService(context, new NullScryfallService());
     }
 
     // --- Create ---
