@@ -8,10 +8,23 @@ import type {
 
 const apiBaseUrl = (() => {
   const configuredUrl = import.meta.env.VITE_API_URL?.trim()
-  if (!configuredUrl && import.meta.env.PROD) {
-    console.warn('VITE_API_URL is not set. The UI will fall back to /api, which usually requires a matching reverse proxy or rewrite.')
+  if (!configuredUrl) {
+    if (import.meta.env.PROD) {
+      console.warn('VITE_API_URL is not set. The UI will fall back to /api, which usually requires a matching reverse proxy or rewrite.')
+    }
+    return '/api'
   }
-  return configuredUrl || '/api'
+
+  try {
+    const parsed = new URL(configuredUrl, window.location.origin)
+    if (parsed.pathname === '/' || parsed.pathname === '') {
+      parsed.pathname = '/api'
+      return parsed.toString().replace(/\/$/, '')
+    }
+    return configuredUrl
+  } catch {
+    return configuredUrl.startsWith('/') ? configuredUrl : `/${configuredUrl.replace(/^\/+/, '')}`
+  }
 })()
 
 const api = axios.create({ baseURL: apiBaseUrl })
