@@ -84,6 +84,19 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+else
+{
+    // Return structured error details in production so issues are diagnosable
+    app.UseExceptionHandler(errApp => errApp.Run(async ctx =>
+    {
+        var feature = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        ctx.Response.StatusCode = 500;
+        ctx.Response.ContentType = "application/json";
+        var msg = feature?.Error?.Message ?? "An unexpected error occurred.";
+        var inner = feature?.Error?.InnerException?.Message;
+        await ctx.Response.WriteAsJsonAsync(new { error = msg, inner });
+    }));
+}
 
 // CORS must come before HTTPS redirect so preflight responses are handled correctly
 app.UseCors();
