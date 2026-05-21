@@ -73,7 +73,8 @@ export interface ScryfallCardDto {
 
 export interface ScryfallSymbolDto {
   symbol: string
-  svgUri: string
+  svgUri?: string
+  svg_uri?: string
   description?: string
   cmc?: number
   appearsInManaCosts?: boolean

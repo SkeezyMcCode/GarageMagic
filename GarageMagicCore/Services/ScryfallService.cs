@@ -130,37 +130,70 @@ public class ScryfallService : IScryfallService
     }
 
     /// <inheritdoc/>
-    public async Task<SymbologyDto> GetSymbologyAsync()
+    public async Task<SymbologyDto?> GetSymbologyAsync()
     {
-        const string cacheKey = "scryfall:symbology";
-        if (_cache.TryGetValue(cacheKey, out SymbologyDto? cached) && cached != null)
-            return cached;
+        const string cacheKey      = "scryfall:symbology:v1";
+        const string staleCacheKey = "scryfall:symbology:v1:stale";
 
+        // ── Cache hit ────────────────────────────────────────────────────────
+        if (_cache.TryGetValue(cacheKey, out SymbologyDto? cached) && cached != null)
+        {
+            _logger.LogDebug("Scryfall symbology: cache hit ({Count} symbols)", cached.Symbols.Count);
+            return cached;
+        }
+
+        // ── Fetch from Scryfall ───────────────────────────────────────────────
+        _logger.LogInformation("Scryfall symbology: cache miss — fetching from Scryfall");
         try
         {
             var response = await _http.GetFromJsonAsync<ScryfallListResponse<ScryfallSymbolResponse>>("symbology");
 
-            var symbols = (response?.Data ?? [])
-                .Select(s => new ManaSymbolDto
-                {
-                    Symbol            = s.Symbol,
-                    SvgUri            = s.SvgUri,
-                    Description       = s.Description,
-                    Cmc               = s.Cmc,
-                    AppearsInManaCosts = s.AppearsInManaCosts,
-                    Colors            = s.Colors ?? []
-                })
-                .ToList();
+            if (response?.Data is not { Count: > 0 })
+            {
+                _logger.LogWarning("Scryfall symbology: upstream returned empty or null data list");
+                // Fall through to stale cache / null return
+            }
+            else
+            {
+                var symbols = response.Data
+                    .Where(s => !string.IsNullOrWhiteSpace(s.Symbol) && !string.IsNullOrWhiteSpace(s.SvgUri))
+                    .Select(s => new ManaSymbolDto
+                    {
+                        Symbol             = s.Symbol,
+                        SvgUri             = s.SvgUri,
+                        Description        = s.Description,
+                        Cmc                = s.Cmc,
+                        AppearsInManaCosts = s.AppearsInManaCosts,
+                        Colors             = s.Colors ?? []
+                    })
+                    .ToList();
 
-            var result = new SymbologyDto { Symbols = symbols };
-            _cache.Set(cacheKey, result, SymbologyCacheDuration);
-            return result;
+                _logger.LogInformation("Scryfall symbology: fetched {Count} symbols from upstream", symbols.Count);
+
+                var result = new SymbologyDto { Symbols = symbols };
+
+                // Store as both live cache and stale fallback
+                _cache.Set(cacheKey,      result, SymbologyCacheDuration);
+                _cache.Set(staleCacheKey, result, TimeSpan.FromDays(30));
+
+                return result;
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Scryfall symbology fetch failed");
-            return new SymbologyDto();
+            _logger.LogError(ex, "Scryfall symbology: upstream fetch failed");
         }
+
+        // ── Stale cache fallback ─────────────────────────────────────────────
+        if (_cache.TryGetValue(staleCacheKey, out SymbologyDto? stale) && stale != null)
+        {
+            _logger.LogWarning("Scryfall symbology: returning stale cached data ({Count} symbols)", stale.Symbols.Count);
+            return stale;
+        }
+
+        // ── No data at all ───────────────────────────────────────────────────
+        _logger.LogError("Scryfall symbology: no cache and upstream failed — returning null (502)");
+        return null;
     }
 
     // ── Internal Scryfall response shapes ────────────────────────────────────

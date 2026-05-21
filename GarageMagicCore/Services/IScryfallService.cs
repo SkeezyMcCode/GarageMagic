@@ -19,8 +19,9 @@ public interface IScryfallService
 
     /// <summary>
     /// Returns the full Scryfall symbology list (all mana symbols with SVG URIs).
-    /// Results are cached for 7 days — the list almost never changes.
+    /// Results are cached for 24 hours.
+    /// Returns null if Scryfall is unreachable AND no cached data exists (caller should return 502).
+    /// On upstream failure with stale cache, returns the stale cached data.
     /// </summary>
-    Task<SymbologyDto> GetSymbologyAsync();
+    Task<SymbologyDto?> GetSymbologyAsync();
 }
-

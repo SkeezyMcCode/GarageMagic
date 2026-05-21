@@ -17,8 +17,8 @@ file sealed class NullScryfallService : IScryfallService
     public Task<CommanderCardDto?> LookupCommanderAsync(string name)
         => Task.FromResult<CommanderCardDto?>(null);
 
-    public Task<SymbologyDto> GetSymbologyAsync()
-        => Task.FromResult(new SymbologyDto());
+    public Task<SymbologyDto?> GetSymbologyAsync()
+        => Task.FromResult<SymbologyDto?>(new SymbologyDto());
 }
 
 public class DeckServiceTests

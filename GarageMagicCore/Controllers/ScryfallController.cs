@@ -61,15 +61,22 @@ public class ScryfallController : ControllerBase
 
     /// <summary>
     /// GET /api/scryfall/symbology
-    /// Returns the full Scryfall mana symbol list, each with an SVG URI.
-    /// Use this to render mana costs client-side (e.g. parse "{3}{W}{U}" into symbol images).
-    /// Results are cached server-side for 7 days.
+    /// Returns the complete Scryfall mana symbol list, each entry containing the symbol
+    /// notation (e.g. "{W}") and an SVG image URI for client-side rendering of mana costs.
+    /// Results are cached server-side for 24 hours; stale cache is served on upstream failure.
+    /// Returns 502 only when Scryfall is unreachable and no cached data exists.
     /// </summary>
     [HttpGet("symbology")]
     [ProducesResponseType(typeof(SymbologyDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status502BadGateway)]
     public async Task<IActionResult> GetSymbology()
     {
         var result = await _scryfall.GetSymbologyAsync();
+
+        if (result == null)
+            return StatusCode(StatusCodes.Status502BadGateway,
+                new { error = "Failed to load Scryfall symbology." });
+
         return Ok(result);
     }
 }
