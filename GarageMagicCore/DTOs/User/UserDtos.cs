@@ -64,3 +64,11 @@ public class UserWithStatsDto : UserDto
     public decimal WinRate { get; set; }
 }
 
+/// <summary>
+/// Request body for POST /users/{pendingUserId}/approve-and-link.
+/// Approves a pending user and migrates all history from the specified guest account.
+/// </summary>
+public class ApproveAndLinkDto
+{
+    public int GuestUserId { get; set; }
+}

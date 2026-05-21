@@ -49,3 +49,37 @@ public class UserStandingDto
     public decimal WinRate { get; set; }
 }
 
+/// <summary>
+/// Request body for PATCH /seasons/{id} — update season name and date range.
+/// </summary>
+public class UpdateSeasonDto
+{
+    public required string Name { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+}
+
+/// <summary>
+/// Request body for PUT /seasons/{seasonId}/records/{userId}.
+/// Admin-only upsert of a user's win/loss record for a season.
+/// </summary>
+public class UpsertSeasonRecordDto
+{
+    public int UserId { get; set; }
+    public int TotalWins { get; set; }
+    public int TotalLosses { get; set; }
+}
+
+/// <summary>
+/// Response DTO for a season record upsert.
+/// </summary>
+public class SeasonRecordDto
+{
+    public int UserId { get; set; }
+    public required string Username { get; set; }
+    public int SeasonId { get; set; }
+    public int TotalWins { get; set; }
+    public int TotalLosses { get; set; }
+    public int TotalMatches { get; set; }
+    public decimal WinRate { get; set; }
+}

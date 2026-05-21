@@ -59,9 +59,9 @@ export default function Betrayals() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <SectionHeader title="🗡️ Hall of Betrayal" subtitle="Where trust goes to die" />
-        <button onClick={() => setShowForm(v => !v)} className="bg-red-700 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+        <button onClick={() => setShowForm(v => !v)} className="bg-red-700 hover:bg-red-600 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors">
           {showForm ? 'Cancel' : '+ Record Betrayal'}
         </button>
       </div>
@@ -70,7 +70,7 @@ export default function Betrayals() {
         <Card className="mb-6 border-red-900">
           <h3 className="font-semibold text-white mb-4">Record a Betrayal</h3>
           <form onSubmit={submit} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-gray-500 text-xs block mb-1">The Backstabber</label>
                 <select className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" value={form.betrayerUserId || ''} onChange={e => setForm(f => ({ ...f, betrayerUserId: Number(e.target.value) }))} required>

@@ -144,9 +144,9 @@ export default function RecordMatch() {
             {participants.map((p, i) => (
               <div key={i} className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-500 text-sm w-6 text-center">{i + 1}</span>
+                  <span className="text-gray-500 text-sm w-6 text-center shrink-0">{i + 1}</span>
                   <select
-                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                    className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500"
                     value={p.userId || ''}
                     onChange={e => setParticipantUser(i, Number(e.target.value))}
                   >
@@ -157,24 +157,26 @@ export default function RecordMatch() {
                       </option>
                     ))}
                   </select>
+                </div>
 
-                  {p.userId > 0 && (decksByUser[p.userId]?.length ?? 0) > 0 && (
+                {p.userId > 0 && (decksByUser[p.userId]?.length ?? 0) > 0 && (
+                  <div className="ml-8">
                     <select
-                      className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-300 text-sm focus:outline-none focus:border-purple-500"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-gray-300 text-sm focus:outline-none focus:border-purple-500"
                       value={p.deckId ?? ''}
                       onChange={e => setParticipantDeck(i, Number(e.target.value))}
                     >
-                      <option value="">No deck</option>
+                      <option value="">No deck selected</option>
                       {decksByUser[p.userId].map(d => <option key={d.id} value={d.id}>{d.deckName}</option>)}
                     </select>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {matchType.sheriff && p.userId > 0 && (
                   <div className="flex gap-2 ml-8">
                     {ROLE_OPTIONS.map(r => (
                       <button key={r.value} type="button" onClick={() => setParticipantRole(i, r.value)}
-                        className={`text-xs px-2 py-1 rounded border transition-colors ${p.hiddenRole === r.value ? 'bg-purple-600 border-purple-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500'}`}>
+                        className={`flex-1 text-sm py-2 rounded-lg border transition-colors ${p.hiddenRole === r.value ? 'bg-purple-600 border-purple-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500'}`}>
                         {r.label}
                       </button>
                     ))}

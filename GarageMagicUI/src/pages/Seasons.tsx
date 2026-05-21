@@ -167,11 +167,11 @@ export default function Seasons() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <SectionHeader title="📅 Seasons" subtitle={`${seasons.length} seasons total`} />
         {activeSeason && user?.isAdmin && (
           <button onClick={doRollover} disabled={rollingOver}
-            className="bg-yellow-700 hover:bg-yellow-600 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+            className="bg-yellow-700 hover:bg-yellow-600 disabled:opacity-50 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors">
             {rollingOver ? 'Rolling over…' : '🔄 Rollover Season'}
           </button>
         )}
@@ -206,25 +206,27 @@ export default function Seasons() {
               {adminError && <div className="mb-3"><ErrorMsg msg={adminError} /></div>}
               {adminSuccess && <p className="text-green-400 text-sm mb-3">{adminSuccess}</p>}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+              <div className="space-y-2 mb-4">
                 <input
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
                   value={seasonForm.name}
                   onChange={e => setSeasonForm(current => ({ ...current, name: e.target.value }))}
                   placeholder="Season name"
                 />
-                <input
-                  type="date"
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
-                  value={seasonForm.startDate}
-                  onChange={e => setSeasonForm(current => ({ ...current, startDate: e.target.value }))}
-                />
-                <input
-                  type="date"
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
-                  value={seasonForm.endDate}
-                  onChange={e => setSeasonForm(current => ({ ...current, endDate: e.target.value }))}
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="date"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                    value={seasonForm.startDate}
+                    onChange={e => setSeasonForm(current => ({ ...current, startDate: e.target.value }))}
+                  />
+                  <input
+                    type="date"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                    value={seasonForm.endDate}
+                    onChange={e => setSeasonForm(current => ({ ...current, endDate: e.target.value }))}
+                  />
+                </div>
               </div>
 
               <div className="flex justify-end mb-6">
@@ -238,39 +240,41 @@ export default function Seasons() {
               </div>
 
               <h4 className="text-white font-medium mb-3">Seed or Correct Player Records</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="space-y-2">
                 <select
                   value={recordForm.userId}
                   onChange={e => setRecordForm(current => ({ ...current, userId: e.target.value }))}
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
                 >
                   <option value="">Choose player/guest…</option>
                   {users.map(u => (
                     <option key={u.id} value={String(u.id)}>{u.username}{u.isGuest ? ' (Guest)' : ''}</option>
                   ))}
                 </select>
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
-                  value={recordForm.totalWins}
-                  onChange={e => setRecordForm(current => ({ ...current, totalWins: e.target.value }))}
-                  placeholder="Wins"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
-                  value={recordForm.totalLosses}
-                  onChange={e => setRecordForm(current => ({ ...current, totalLosses: e.target.value }))}
-                  placeholder="Losses"
-                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                    value={recordForm.totalWins}
+                    onChange={e => setRecordForm(current => ({ ...current, totalWins: e.target.value }))}
+                    placeholder="Wins"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
+                    value={recordForm.totalLosses}
+                    onChange={e => setRecordForm(current => ({ ...current, totalLosses: e.target.value }))}
+                    placeholder="Losses"
+                  />
+                </div>
                 <button
                   onClick={saveSeasonRecord}
                   disabled={savingRecord}
-                  className="bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors"
+                  className="w-full bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors"
                 >
                   {savingRecord ? 'Saving…' : 'Save Record'}
                 </button>
@@ -286,7 +290,8 @@ export default function Seasons() {
               {standings.standings.length === 0 ? (
                 <p className="text-gray-500 text-sm">No matches recorded this season.</p>
               ) : (
-                <table className="w-full text-sm">
+                <div className="overflow-x-auto -mx-5">
+                <table className="w-full text-sm min-w-[420px] px-5">
                   <thead>
                     <tr className="text-gray-500 border-b border-gray-800">
                       <th className="text-left pb-2">#</th>
@@ -321,6 +326,7 @@ export default function Seasons() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
             </Card>
           ) : (

@@ -140,30 +140,33 @@ export default function AdminPanel() {
           <div className="space-y-3">
             {actionError && <ErrorMsg msg={actionError} />}
             {pending.map(u => (
-              <Card key={u.id} className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-white font-semibold">{u.username}</p>
-                  <p className="text-gray-500 text-xs">{u.email} · {new Date(u.createdAt).toLocaleDateString()}</p>
+              <Card key={u.id} className="space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-white font-semibold truncate">{u.username}</p>
+                    <p className="text-gray-500 text-xs mt-0.5 truncate">{u.email} · {new Date(u.createdAt).toLocaleDateString()}</p>
+                  </div>
                 </div>
-                <div className="flex gap-2">
+                {guests.length > 0 && (
                   <select
                     value={pendingGuestLinks[u.id] ?? ''}
                     onChange={e => setPendingGuestLinks(current => ({ ...current, [u.id]: e.target.value }))}
-                    disabled={actioning === u.id || guests.length === 0}
-                    className="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-purple-500"
+                    disabled={actioning === u.id}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500"
                   >
                     <option value="">No guest link</option>
-                    {guests.length === 0 && <option value="" disabled>No guests available</option>}
                     {guests.map(g => (
                       <option key={g.id} value={String(g.id)}>{g.username}</option>
                     ))}
                   </select>
+                )}
+                <div className="flex gap-2">
                   <button onClick={() => approve(u.id)} disabled={actioning === u.id}
-                    className="bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
+                    className="flex-1 bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
                     {pendingGuestLinks[u.id] ? '✓ Approve & Link' : '✓ Approve'}
                   </button>
                   <button onClick={() => reject(u.id)} disabled={actioning === u.id}
-                    className="bg-red-800 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors">
+                    className="flex-1 bg-red-800 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
                     ✕ Reject
                   </button>
                 </div>

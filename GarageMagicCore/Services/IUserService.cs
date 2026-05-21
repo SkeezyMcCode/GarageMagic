@@ -15,5 +15,13 @@ public interface IUserService
     Task<bool> RejectAsync(int id);
     Task<UserDto> CreateGuestAsync(CreateGuestDto dto);
     Task<List<UserDto>> GetGuestsAsync();
-}
 
+    /// <summary>
+    /// Approves a pending user and migrates all history from a guest account in a single transaction.
+    /// Throws <see cref="ArgumentException"/> if pendingUserId == guestUserId.
+    /// Throws <see cref="KeyNotFoundException"/> if either user is not found.
+    /// Throws <see cref="InvalidOperationException"/> if the pending user is already approved,
+    /// or the guest user is not a guest.
+    /// </summary>
+    Task<UserDto> ApproveAndLinkAsync(int pendingUserId, int guestUserId);
+}

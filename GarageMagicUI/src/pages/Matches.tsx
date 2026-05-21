@@ -39,18 +39,18 @@ export default function Matches() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <SectionHeader title="⚔️ Matches" subtitle={`${matches.length} matches recorded`} />
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <select
-            className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-purple-500"
+            className="flex-1 sm:flex-none bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-purple-500"
             value={selectedSeason ?? ''}
             onChange={e => changeSeason(Number(e.target.value))}
           >
             {seasons.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
-          <Link to="/matches/new" className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
-            + Record Match
+          <Link to="/matches/new" className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition-colors whitespace-nowrap">
+            + Record
           </Link>
         </div>
       </div>

@@ -69,6 +69,39 @@ public class UsersController : ControllerBase
         return user == null ? NotFound() : Ok(user);
     }
 
+    /// <summary>
+    /// POST /api/users/{pendingUserId}/approve-and-link — Approve a pending user and migrate
+    /// all history from an existing guest account in a single transaction (admin only).
+    /// </summary>
+    /// <param name="pendingUserId">ID of the pending (unapproved) user to approve.</param>
+    /// <param name="dto">Body containing the guest user ID whose history will be migrated.</param>
+    [HttpPost("{pendingUserId:int}/approve-and-link")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ApproveAndLink(int pendingUserId, [FromBody] ApproveAndLinkDto dto)
+    {
+        try
+        {
+            var user = await _userService.ApproveAndLinkAsync(pendingUserId, dto.GuestUserId);
+            return Ok(user);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(new { error = ex.Message });
+        }
+    }
+
     /// <summary>DELETE /api/users/{id}/reject - Reject and remove a pending user (admin only)</summary>
     [HttpDelete("{id:int}/reject")]
     [Authorize(Roles = "Admin")]

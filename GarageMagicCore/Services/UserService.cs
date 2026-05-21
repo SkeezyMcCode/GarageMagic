@@ -197,6 +197,147 @@ public class UserService : IUserService
             .ToListAsync();
     }
 
+    public async Task<UserDto> ApproveAndLinkAsync(int pendingUserId, int guestUserId)
+    {
+        // ── Fast-fail validation (outside transaction) ────────────────────────
+        if (pendingUserId == guestUserId)
+            throw new ArgumentException("Cannot link a user to themselves.");
+
+        var pendingUser = await _context.Users.FindAsync(pendingUserId)
+            ?? throw new KeyNotFoundException($"Pending user {pendingUserId} not found.");
+
+        if (pendingUser.IsApproved)
+            throw new InvalidOperationException($"User {pendingUserId} is already approved.");
+
+        var guestUser = await _context.Users.FindAsync(guestUserId)
+            ?? throw new KeyNotFoundException($"Guest user {guestUserId} not found.");
+
+        if (!guestUser.IsGuest)
+            throw new InvalidOperationException($"User {guestUserId} is not a guest.");
+
+        // ── Transaction ───────────────────────────────────────────────────────
+        await using var tx = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            // 1. Resolve username conflict (edge case: someone already has that username)
+            if (await _context.Users.AnyAsync(u => u.Username == pendingUser.Username && u.Id != pendingUser.Id))
+            {
+                var baseUsername = pendingUser.Username;
+                var suffix = 1;
+                while (await _context.Users.AnyAsync(u => u.Username == $"{baseUsername}_{suffix}" && u.Id != pendingUser.Id))
+                    suffix++;
+                pendingUser.Username = $"{baseUsername}_{suffix}";
+            }
+
+            // 2. Approve the pending user
+            pendingUser.IsApproved = true;
+            pendingUser.UpdatedAt  = DateTime.UtcNow;
+
+            // 3. Migrate MatchParticipants
+            await _context.MatchParticipants
+                .Where(mp => mp.UserId == guestUserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(mp => mp.UserId, pendingUserId));
+
+            // 4. Migrate MatchWinners
+            await _context.MatchWinners
+                .Where(mw => mw.UserId == guestUserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(mw => mw.UserId, pendingUserId));
+
+            // 5. Migrate Betrayals (both betrayer and victim roles)
+            await _context.Betrayals
+                .Where(b => b.BetrayerUserId == guestUserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(b => b.BetrayerUserId, pendingUserId));
+
+            await _context.Betrayals
+                .Where(b => b.VictimUserId == guestUserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(b => b.VictimUserId, pendingUserId));
+
+            // 6. Migrate Decks
+            await _context.Decks
+                .Where(d => d.UserId == guestUserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(d => d.UserId, pendingUserId));
+
+            // 7. Migrate Match.SheriffUserId references
+            await _context.Matches
+                .Where(m => m.SheriffUserId == guestUserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(m => m.SheriffUserId, pendingUserId));
+
+            // 8. Migrate PrestigeLevels
+            await _context.PrestigeLevels
+                .Where(p => p.UserId == guestUserId)
+                .ExecuteUpdateAsync(s => s.SetProperty(p => p.UserId, pendingUserId));
+
+            // 9. Migrate UserStats — merge into pending user's row if season already has one
+            var guestStats = await _context.UserStats
+                .Where(s => s.UserId == guestUserId)
+                .ToListAsync();
+
+            foreach (var gs in guestStats)
+            {
+                var existing = await _context.UserStats
+                    .FirstOrDefaultAsync(s => s.UserId == pendingUserId && s.SeasonId == gs.SeasonId);
+
+                if (existing == null)
+                {
+                    gs.UserId = pendingUserId;
+                }
+                else
+                {
+                    existing.TotalWins          += gs.TotalWins;
+                    existing.TotalLosses        += gs.TotalLosses;
+                    existing.TotalMatches       += gs.TotalMatches;
+                    existing.Wins1v1v1          += gs.Wins1v1v1;
+                    existing.Wins1v1v1v1        += gs.Wins1v1v1v1;
+                    existing.WinsSheriff        += gs.WinsSheriff;
+                    existing.SheriffGamesPlayed += gs.SheriffGamesPlayed;
+                    existing.SheriffGamesWon    += gs.SheriffGamesWon;
+                    existing.DeputyGamesPlayed  += gs.DeputyGamesPlayed;
+                    existing.DeputyGamesWon     += gs.DeputyGamesWon;
+                    existing.RedGamesPlayed     += gs.RedGamesPlayed;
+                    existing.RedGamesWon        += gs.RedGamesWon;
+                    existing.UpdatedAt           = DateTime.UtcNow;
+                    _context.UserStats.Remove(gs);
+                }
+            }
+
+            // 10. Ensure a UserStats row exists for the active season
+            var activeSeason = await _context.Seasons.FirstOrDefaultAsync(s => s.IsActive);
+            if (activeSeason != null)
+            {
+                var statsExist = await _context.UserStats
+                    .AnyAsync(s => s.UserId == pendingUserId && s.SeasonId == activeSeason.Id);
+                if (!statsExist)
+                {
+                    _context.UserStats.Add(new Models.UserStats
+                    {
+                        UserId    = pendingUserId,
+                        SeasonId  = activeSeason.Id,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                }
+            }
+
+            // 11. Save tracked changes (stats merges, approve flag, username fix)
+            await _context.SaveChangesAsync();
+
+            // 12. Soft-deactivate the guest record to preserve any residual FK integrity
+            guestUser.IsGuest    = false;
+            guestUser.IsApproved = false;
+            guestUser.Username   = $"__merged_{guestUser.Id}_{guestUser.Username}";
+            guestUser.Email      = $"__merged_{guestUser.Id}@merged.local";
+            guestUser.UpdatedAt  = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            await tx.CommitAsync();
+            return MapToDto(pendingUser);
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            throw;
+        }
+    }
+
     private static UserDto MapToDto(User user) => new()
     {
         Id = user.Id,

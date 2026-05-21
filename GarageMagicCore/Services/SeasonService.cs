@@ -137,6 +137,67 @@ public class SeasonService : ISeasonService
     private static (int year, Quarter quarter) GetNextQuarter(int year, Quarter quarter) =>
         quarter == Quarter.Q4 ? (year + 1, Quarter.Q1) : (year, quarter + 1);
 
+    public async Task<SeasonDto?> UpdateAsync(int seasonId, UpdateSeasonDto dto)
+    {
+        var season = await _context.Seasons.FindAsync(seasonId);
+        if (season == null) return null;
+
+        season.Name      = dto.Name;
+        season.StartDate = dto.StartDate.Kind == DateTimeKind.Utc
+            ? dto.StartDate
+            : dto.StartDate.ToUniversalTime();
+        season.EndDate   = dto.EndDate.Kind == DateTimeKind.Utc
+            ? dto.EndDate
+            : dto.EndDate.ToUniversalTime();
+
+        await _context.SaveChangesAsync();
+        return MapToDto(season);
+    }
+
+    public async Task<SeasonRecordDto?> UpsertRecordAsync(int seasonId, UpsertSeasonRecordDto dto)
+    {
+        var season = await _context.Seasons.FindAsync(seasonId);
+        if (season == null) return null;
+
+        var user = await _context.Users.FindAsync(dto.UserId);
+        if (user == null) return null;
+
+        var record = await _context.UserStats
+            .FirstOrDefaultAsync(s => s.SeasonId == seasonId && s.UserId == dto.UserId);
+
+        if (record == null)
+        {
+            record = new UserStats
+            {
+                SeasonId  = seasonId,
+                UserId    = dto.UserId,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.UserStats.Add(record);
+        }
+
+        record.TotalWins    = dto.TotalWins;
+        record.TotalLosses  = dto.TotalLosses;
+        record.TotalMatches = dto.TotalWins + dto.TotalLosses;
+
+        await _context.SaveChangesAsync();
+
+        var winRate = record.TotalMatches > 0
+            ? Math.Round((decimal)record.TotalWins / record.TotalMatches * 100, 2)
+            : 0m;
+
+        return new SeasonRecordDto
+        {
+            UserId       = record.UserId,
+            Username     = user.Username,
+            SeasonId     = record.SeasonId,
+            TotalWins    = record.TotalWins,
+            TotalLosses  = record.TotalLosses,
+            TotalMatches = record.TotalMatches,
+            WinRate      = winRate
+        };
+    }
+
     private static SeasonDto MapToDto(Season s) => new()
     {
         Id = s.Id,

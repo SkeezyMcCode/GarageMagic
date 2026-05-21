@@ -42,7 +42,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Season banner */}
       {season && (
-        <Card className="flex items-center justify-between">
+        <Card className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <p className="text-xs text-gray-500 uppercase tracking-widest">Active Season</p>
             <h2 className="text-2xl font-bold text-purple-400">{season.name}</h2>
@@ -50,8 +50,8 @@ export default function Dashboard() {
               {new Date(season.startDate).toLocaleDateString()} – {new Date(season.endDate).toLocaleDateString()}
             </p>
           </div>
-          <Link to="/matches/new" className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-5 py-2.5 rounded-lg transition-colors text-sm">
-            + Record Match
+          <Link to="/matches/new" className="bg-purple-600 hover:bg-purple-500 text-white font-semibold px-5 py-3 rounded-lg transition-colors text-sm text-center">
+            ⚔️ Record Match
           </Link>
         </Card>
       )}
@@ -122,13 +122,15 @@ export default function Dashboard() {
         ) : (
           <div className="space-y-2">
             {matches.map(m => (
-              <div key={m.id} className="flex items-center gap-3 bg-gray-800/50 rounded-lg px-4 py-3">
-                <Badge color="purple">{MATCH_TYPE_LABEL[m.matchType] ?? m.matchType}</Badge>
-                <span className="text-gray-400 text-sm">{new Date(m.matchDate).toLocaleDateString()}</span>
-                <span className="text-gray-500 text-sm flex-1">
+              <div key={m.id} className="flex flex-col sm:flex-row sm:items-center gap-2 bg-gray-800/50 rounded-lg px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <Badge color="purple">{MATCH_TYPE_LABEL[m.matchType] ?? m.matchType}</Badge>
+                  <span className="text-gray-400 text-sm">{new Date(m.matchDate).toLocaleDateString()}</span>
+                </div>
+                <span className="text-gray-500 text-sm sm:flex-1 truncate">
                   {m.participants.map(p => p.username).join(', ')}
                 </span>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 flex-wrap">
                   <span className="text-xs text-gray-500">Won:</span>
                   {m.winners.map(w => (
                     <Badge key={w.userId} color="green">{w.username}</Badge>

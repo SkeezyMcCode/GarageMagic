@@ -184,5 +184,192 @@ public class SeasonServiceTests
         var result = await svc.GetStandingsAsync(999);
         result.Should().BeNull();
     }
+
+    // --- UpdateAsync ---
+
+    [Fact]
+    public async Task Update_ValidDto_ChangesNameAndDates()
+    {
+        var svc = CreateService(out var ctx);
+
+        var result = await svc.UpdateAsync(1, new UpdateSeasonDto
+        {
+            Name      = "Renamed Season",
+            StartDate = new DateTime(2026, 4, 15, 0, 0, 0, DateTimeKind.Utc),
+            EndDate   = new DateTime(2026, 6, 15, 0, 0, 0, DateTimeKind.Utc)
+        });
+
+        result.Should().NotBeNull();
+        result!.Name.Should().Be("Renamed Season");
+        result.StartDate.Day.Should().Be(15);
+        result.EndDate.Month.Should().Be(6);
+
+        var dbSeason = await ctx.Seasons.FindAsync(1);
+        dbSeason!.Name.Should().Be("Renamed Season");
+    }
+
+    [Fact]
+    public async Task Update_NonExistentSeason_ReturnsNull()
+    {
+        var svc = CreateService(out _);
+
+        var result = await svc.UpdateAsync(9999, new UpdateSeasonDto
+        {
+            Name      = "Ghost Season",
+            StartDate = DateTime.UtcNow,
+            EndDate   = DateTime.UtcNow.AddMonths(3)
+        });
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Update_LocalDateTime_IsConvertedToUtc()
+    {
+        var svc = CreateService(out var ctx);
+
+        var localStart = new DateTime(2026, 4, 1, 0, 0, 0, DateTimeKind.Local);
+        var localEnd   = new DateTime(2026, 6, 30, 0, 0, 0, DateTimeKind.Local);
+
+        var result = await svc.UpdateAsync(1, new UpdateSeasonDto
+        {
+            Name      = "UTC Test",
+            StartDate = localStart,
+            EndDate   = localEnd
+        });
+
+        result.Should().NotBeNull();
+        var dbSeason = await ctx.Seasons.FindAsync(1);
+        dbSeason!.StartDate.Kind.Should().Be(DateTimeKind.Utc);
+        dbSeason.EndDate.Kind.Should().Be(DateTimeKind.Utc);
+    }
+
+    // --- UpsertRecordAsync ---
+
+    [Fact]
+    public async Task UpsertRecord_Create_SetsAllDerivedFields()
+    {
+        var svc = CreateService(out var ctx);
+        var user = TestDbHelper.CreateUser(ctx, "Bob", "bob@test.com");
+
+        var result = await svc.UpsertRecordAsync(1, new UpsertSeasonRecordDto
+        {
+            UserId       = user.Id,
+            TotalWins    = 4,
+            TotalLosses  = 1
+        });
+
+        result.Should().NotBeNull();
+        result!.TotalWins.Should().Be(4);
+        result.TotalLosses.Should().Be(1);
+        result.TotalMatches.Should().Be(5);           // derived: wins + losses
+        result.WinRate.Should().Be(80.00m);           // 4/5 * 100
+        result.Username.Should().Be("Bob");
+        result.SeasonId.Should().Be(1);
+        result.UserId.Should().Be(user.Id);
+    }
+
+    [Fact]
+    public async Task UpsertRecord_Update_OverwritesExistingValues()
+    {
+        var svc = CreateService(out var ctx);
+        var user = TestDbHelper.CreateUser(ctx, "Carol", "carol@test.com");
+
+        // Seed an existing record
+        ctx.UserStats.Add(new GarageMagicCore.Models.UserStats
+        {
+            UserId = user.Id, SeasonId = 1,
+            TotalWins = 2, TotalLosses = 3, TotalMatches = 5,
+            CreatedAt = DateTime.UtcNow
+        });
+        ctx.SaveChanges();
+
+        var result = await svc.UpsertRecordAsync(1, new UpsertSeasonRecordDto
+        {
+            UserId      = user.Id,
+            TotalWins   = 10,
+            TotalLosses = 0
+        });
+
+        result.Should().NotBeNull();
+        result!.TotalWins.Should().Be(10);
+        result.TotalLosses.Should().Be(0);
+        result.TotalMatches.Should().Be(10);
+        result.WinRate.Should().Be(100.00m);
+
+        // Verify only one DB row exists for this user/season
+        var rows = ctx.UserStats.Where(s => s.UserId == user.Id && s.SeasonId == 1).ToList();
+        rows.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public async Task UpsertRecord_ZeroMatches_WinRateIsZero()
+    {
+        var svc = CreateService(out var ctx);
+        var user = TestDbHelper.CreateUser(ctx, "Dave", "dave@test.com");
+
+        var result = await svc.UpsertRecordAsync(1, new UpsertSeasonRecordDto
+        {
+            UserId      = user.Id,
+            TotalWins   = 0,
+            TotalLosses = 0
+        });
+
+        result!.WinRate.Should().Be(0m);
+        result.TotalMatches.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpsertRecord_NonExistentSeason_ReturnsNull()
+    {
+        var svc = CreateService(out var ctx);
+        var user = TestDbHelper.CreateUser(ctx);
+
+        var result = await svc.UpsertRecordAsync(9999, new UpsertSeasonRecordDto
+        {
+            UserId = user.Id, TotalWins = 1, TotalLosses = 0
+        });
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpsertRecord_NonExistentUser_ReturnsNull()
+    {
+        var svc = CreateService(out _);
+
+        var result = await svc.UpsertRecordAsync(1, new UpsertSeasonRecordDto
+        {
+            UserId = 9999, TotalWins = 1, TotalLosses = 0
+        });
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpsertRecord_UpdatedRecord_ReflectsInStandings()
+    {
+        var ctx = TestDbHelper.CreateContext();
+        var u1  = TestDbHelper.CreateUser(ctx, "X", "x@t.com");
+        var u2  = TestDbHelper.CreateUser(ctx, "Y", "y@t.com");
+
+        ctx.UserStats.AddRange(
+            new GarageMagicCore.Models.UserStats { UserId = u1.Id, SeasonId = 1, TotalWins = 2, TotalLosses = 1, TotalMatches = 3, CreatedAt = DateTime.UtcNow },
+            new GarageMagicCore.Models.UserStats { UserId = u2.Id, SeasonId = 1, TotalWins = 5, TotalLosses = 0, TotalMatches = 5, CreatedAt = DateTime.UtcNow }
+        );
+        ctx.SaveChanges();
+
+        var svc = new SeasonService(ctx);
+
+        // Upsert u1 with higher wins so they should top the standings
+        await svc.UpsertRecordAsync(1, new UpsertSeasonRecordDto
+        {
+            UserId = u1.Id, TotalWins = 10, TotalLosses = 1
+        });
+
+        var standings = await svc.GetStandingsAsync(1);
+        standings!.Standings[0].UserId.Should().Be(u1.Id);
+        standings.Standings[0].TotalWins.Should().Be(10);
+    }
 }
 

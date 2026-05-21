@@ -71,25 +71,25 @@ export default function PlayerDetail() {
     <div className="space-y-6">
       {/* Header */}
       <Card>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-4">
           <div>
             <Link to="/players" className="text-gray-500 hover:text-gray-300 text-sm mb-2 block">← Players</Link>
-            <h1 className="text-3xl font-bold text-white">{user.username}</h1>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-start justify-between gap-2">
+              <h1 className="text-3xl font-bold text-white">{user.username}</h1>
               {user.currentPrestigeLevel > 0 && <PrestigeBadge level={user.currentPrestigeLevel} />}
-              <span className="text-gray-500 text-sm">{user.email}</span>
             </div>
+            {user.email && <span className="text-gray-500 text-sm mt-1 block">{user.email}</span>}
           </div>
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div className="bg-gray-800 rounded-lg px-4 py-3">
+            <div className="bg-gray-800 rounded-lg px-3 py-3">
               <p className="text-green-400 text-2xl font-bold">{user.totalWins}</p>
               <p className="text-gray-500 text-xs">All-time Wins</p>
             </div>
-            <div className="bg-gray-800 rounded-lg px-4 py-3">
+            <div className="bg-gray-800 rounded-lg px-3 py-3">
               <p className="text-red-400 text-2xl font-bold">{user.totalLosses}</p>
               <p className="text-gray-500 text-xs">All-time Losses</p>
             </div>
-            <div className="bg-gray-800 rounded-lg px-4 py-3">
+            <div className="bg-gray-800 rounded-lg px-3 py-3">
               <p className="text-purple-400 text-2xl font-bold">{user.winRate.toFixed(0)}%</p>
               <p className="text-gray-500 text-xs">Win Rate</p>
             </div>
@@ -128,15 +128,13 @@ export default function PlayerDetail() {
               </button>
             </div>
             {showDeckForm && (
-              <form onSubmit={submitDeck} className="grid grid-cols-3 gap-2 mb-3">
-                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-white text-xs focus:outline-none focus:border-purple-500" placeholder="Deck Name" value={deckForm.deckName} onChange={e => setDeckForm(f => ({ ...f, deckName: e.target.value }))} required />
-                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-white text-xs focus:outline-none focus:border-purple-500" placeholder="Commander" value={deckForm.commanderName} onChange={e => setDeckForm(f => ({ ...f, commanderName: e.target.value }))} required />
-                <input className="bg-gray-800 border border-gray-700 rounded px-2 py-1.5 text-white text-xs focus:outline-none focus:border-purple-500" placeholder="Colors (e.g. WUBG)" maxLength={6} value={deckForm.colorIdentity} onChange={e => setDeckForm(f => ({ ...f, colorIdentity: e.target.value.toUpperCase() }))} />
-                <div className="col-span-3">
-                  <button type="submit" disabled={deckSubmitting} className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs px-4 py-1.5 rounded transition-colors">
-                    {deckSubmitting ? 'Adding...' : 'Add Deck'}
-                  </button>
-                </div>
+              <form onSubmit={submitDeck} className="space-y-2 mb-3">
+                <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="Deck Name" value={deckForm.deckName} onChange={e => setDeckForm(f => ({ ...f, deckName: e.target.value }))} required />
+                <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="Commander" value={deckForm.commanderName} onChange={e => setDeckForm(f => ({ ...f, commanderName: e.target.value }))} required />
+                <input className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-purple-500" placeholder="Colors (e.g. WUBG)" maxLength={6} value={deckForm.colorIdentity} onChange={e => setDeckForm(f => ({ ...f, colorIdentity: e.target.value.toUpperCase() }))} />
+                <button type="submit" disabled={deckSubmitting} className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+                  {deckSubmitting ? 'Adding...' : 'Add Deck'}
+                </button>
               </form>
             )}
             {decks.length === 0 ? <p className="text-gray-500 text-sm">No decks yet.</p> : (
