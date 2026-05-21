@@ -31,6 +31,12 @@ function parseManaCost(input: string) {
   return input.match(/\{[^}]+}/g) ?? []
 }
 
+function normalizeSymbolKey(symbol: string) {
+  const trimmed = symbol.trim()
+  if (!trimmed) return ''
+  return trimmed.startsWith('{') ? trimmed : `{${trimmed}}`
+}
+
 export default function ManaCostSymbols({ manaCost }: { manaCost?: string }) {
   const [symbols, setSymbols] = useState<ScryfallSymbolDto[]>(symbologyCache ?? [])
 
@@ -40,7 +46,7 @@ export default function ManaCostSymbols({ manaCost }: { manaCost?: string }) {
   }, [])
 
   const symbolMap = useMemo(
-    () => new Map(symbols.map(symbol => [symbol.symbol, symbol])),
+    () => new Map(symbols.map(symbol => [normalizeSymbolKey(symbol.symbol), symbol])),
     [symbols],
   )
 
