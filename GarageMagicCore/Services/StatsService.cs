@@ -82,6 +82,7 @@ public class StatsService : IStatsService
             OutlawGamesWon = stats.OutlawGamesWon,
             RenegadeGamesPlayed = stats.RenegadeGamesPlayed,
             RenegadeGamesWon = stats.RenegadeGamesWon,
+            MatriarchGamesPlayed = stats.MatriarchGamesPlayed,
             MatriarchTriggered = stats.MatriarchTriggered,
             MatriarchWins = stats.MatriarchWins,
             PrestigeLevel = stats.User.CurrentPrestigeLevel

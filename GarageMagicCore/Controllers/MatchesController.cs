@@ -126,6 +126,16 @@ public class MatchesController : ControllerBase
                 MaxCount = 1,
                 GameModeOnly = "SixPlayerSheriff",
                 WinCondition = "Be the last player standing. You cannot kill the Sheriff first — eliminate Outlaws and the Deputy before going for the Sheriff."
+            },
+            new()
+            {
+                Role = "Matriarch",
+                Label = "Matriarch",
+                Color = "#7C3AED",
+                TextColor = "#FFFFFF",
+                MaxCount = 1,
+                GameModeOnly = null,
+                WinCondition = "Dealt as a starting role. If you deliver the killing blow to the Sheriff, you become the new Sheriff (life resets), the old Sheriff drops to 1 HP and becomes an Outlaw, and the Deputy now fights for you. Win as the new Sheriff to claim victory."
             }
         };
 

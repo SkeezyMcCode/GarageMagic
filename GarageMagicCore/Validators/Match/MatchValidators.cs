@@ -48,6 +48,12 @@ public class CreateMatchDtoValidator : AbstractValidator<CreateMatchDto>
             .WithMessage("Sheriff mode requires exactly two Outlaws")
             .When(IsSheriffMode);
         
+        // Sheriff mode: exactly 1 Matriarch
+        RuleFor(x => x.Participants)
+            .Must(p => p.Count(x => x.HiddenRole == HiddenRole.Matriarch) == 1)
+            .WithMessage("Sheriff mode requires exactly one Matriarch")
+            .When(IsSheriffMode);
+        
         // 6-player: exactly 1 Renegade
         RuleFor(x => x.Participants)
             .Must(p => p.Count(x => x.HiddenRole == HiddenRole.Renegade) == 1)
@@ -60,12 +66,12 @@ public class CreateMatchDtoValidator : AbstractValidator<CreateMatchDto>
             .WithMessage("Renegade role is only available in six-player Sheriff mode")
             .When(x => x.MatchType == Models.MatchType.FivePlayerSheriff);
         
-        // Matriarch: if set, must be an Outlaw participant
+        // Matriarch: if set, must be the participant who started with the Matriarch role
         RuleFor(x => x.MatriarchUserId)
             .Must((dto, matriarchId) =>
                 matriarchId == null ||
-                dto.Participants.Any(p => p.UserId == matriarchId && p.HiddenRole == HiddenRole.Outlaw))
-            .WithMessage("Matriarch player must be a participant who started as an Outlaw")
+                dto.Participants.Any(p => p.UserId == matriarchId && p.HiddenRole == HiddenRole.Matriarch))
+            .WithMessage("MatriarchUserId must be the participant who was dealt the Matriarch role")
             .When(IsSheriffMode);
     }
     

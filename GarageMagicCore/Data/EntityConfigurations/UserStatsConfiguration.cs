@@ -54,6 +54,9 @@ public class UserStatsConfiguration : IEntityTypeConfiguration<UserStats>
         builder.Property(us => us.RenegadeGamesWon)
             .HasDefaultValue(0);
         
+        builder.Property(us => us.MatriarchGamesPlayed)
+            .HasDefaultValue(0);
+        
         builder.Property(us => us.MatriarchTriggered)
             .HasDefaultValue(0);
         

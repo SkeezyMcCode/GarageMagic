@@ -23,8 +23,9 @@ public class MatchParticipant
 
 public enum HiddenRole
 {
-    Sheriff,    // White - must survive; Deputy wins if Sheriff wins
-    Deputy,     // Blue  - wins with Sheriff even if dead
-    Outlaw,     // Red   - 2 players; win if Sheriff dies
-    Renegade    // Black - 6-player only; wins only when everyone else is dead
+    Sheriff,    // White  - must survive; Deputy wins if Sheriff wins
+    Deputy,     // Blue   - wins with Sheriff even if dead
+    Outlaw,     // Red    - 2 players; win if Sheriff dies
+    Renegade,   // Black  - 6-player only; wins only when everyone else is dead
+    Matriarch   // Purple - wins by delivering killing blow to Sheriff, then winning as new Sheriff
 }

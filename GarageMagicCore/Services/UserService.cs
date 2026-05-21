@@ -345,6 +345,7 @@ public class UserService : IUserService
                     existing.OutlawGamesWon     += gs.OutlawGamesWon;
                     existing.RenegadeGamesPlayed += gs.RenegadeGamesPlayed;
                     existing.RenegadeGamesWon   += gs.RenegadeGamesWon;
+                    existing.MatriarchGamesPlayed += gs.MatriarchGamesPlayed;
                     existing.MatriarchTriggered += gs.MatriarchTriggered;
                     existing.MatriarchWins      += gs.MatriarchWins;
                     existing.UpdatedAt           = DateTime.UtcNow;

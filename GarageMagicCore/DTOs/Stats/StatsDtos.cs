@@ -32,6 +32,7 @@ public class UserStatsDto
     public int RenegadeGamesWon { get; set; }
 
     // Matriarch stats
+    public int MatriarchGamesPlayed { get; set; }
     public int MatriarchTriggered { get; set; }
     public int MatriarchWins { get; set; }
 

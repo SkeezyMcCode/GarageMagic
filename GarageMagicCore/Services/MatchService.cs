@@ -133,13 +133,16 @@ public class MatchService : IMatchService
                         break;
                 }
 
-                // Matriarch: started as Outlaw, ended as Sheriff
-                if (p.HiddenRole == HiddenRole.Outlaw &&
-                    p.FinalRole == HiddenRole.Sheriff &&
-                    dto.MatriarchUserId == p.UserId)
+                // Matriarch: started as Matriarch role
+                if (p.HiddenRole == HiddenRole.Matriarch)
                 {
-                    stats.MatriarchTriggered++;
-                    if (isWinner) stats.MatriarchWins++;
+                    stats.MatriarchGamesPlayed++;
+                    // Triggered = they actually killed the Sheriff and swapped
+                    if (dto.MatriarchUserId == p.UserId)
+                    {
+                        stats.MatriarchTriggered++;
+                        if (isWinner) stats.MatriarchWins++;
+                    }
                 }
             }
         }
@@ -176,15 +179,15 @@ public class MatchService : IMatchService
     /// <summary>
     /// Resolves winners for Sheriff games based on role rules:
     /// - Sheriff team wins → Deputy auto-added as winner even if dead
-    /// - Sheriff dies → Outlaws win; Deputy removed from winners
+    /// - Sheriff dies → Outlaws + Matriarch (if they triggered swap) win; Deputy removed
+    /// - If Matriarch triggered swap: game continued, Matriarch became new Sheriff — use them as final Sheriff
     /// - Renegade: frontend passes them in WinnerUserIds if they won
-    /// - Matriarch: if set, uses that player as the "final Sheriff" for win resolution
     /// </summary>
     private static List<int> ResolveSheriffWinners(CreateMatchDto dto)
     {
         var sheriffParticipant = dto.Participants.First(p => p.HiddenRole == HiddenRole.Sheriff);
 
-        // Final sheriff is the Matriarch if a swap happened, otherwise the original
+        // If Matriarch triggered the swap, they are the final Sheriff for win resolution
         int finalSheriffId = dto.MatriarchUserId ?? sheriffParticipant.UserId;
         bool finalSheriffWon = dto.WinnerUserIds.Contains(finalSheriffId);
 
@@ -192,20 +195,23 @@ public class MatchService : IMatchService
 
         if (finalSheriffWon)
         {
-            // Sheriff team wins — Deputy also wins regardless
+            // Sheriff team wins — Deputy also wins regardless of whether they're dead
             var deputyId = dto.Participants.FirstOrDefault(p => p.HiddenRole == HiddenRole.Deputy)?.UserId;
             if (deputyId.HasValue)
                 winners.Add(deputyId.Value);
         }
         else
         {
-            // Sheriff died — Deputy can't win, Outlaws win
+            // Sheriff died — Deputy can't win; Outlaws win
             var deputyId = dto.Participants.FirstOrDefault(p => p.HiddenRole == HiddenRole.Deputy)?.UserId;
             if (deputyId.HasValue)
                 winners.Remove(deputyId.Value);
 
             foreach (var outlaw in dto.Participants.Where(p => p.HiddenRole == HiddenRole.Outlaw))
                 winners.Add(outlaw.UserId);
+
+            // Matriarch only wins if THEY specifically triggered the swap (and then won as new Sheriff)
+            // If Sheriff died to an Outlaw instead, Matriarch does not automatically win
         }
 
         return winners.ToList();

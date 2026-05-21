@@ -30,7 +30,8 @@ public class UserStats
     public int RenegadeGamesWon { get; set; }
     
     // Matriarch stats — triggered when an Outlaw kills the Sheriff and takes over
-    public int MatriarchTriggered { get; set; }  // Times this player triggered the swap
+    public int MatriarchGamesPlayed { get; set; } // Times dealt the Matriarch card
+    public int MatriarchTriggered { get; set; }   // Times they actually killed the Sheriff and swapped
     public int MatriarchWins { get; set; }        // Times they won after becoming new Sheriff
     
     // Deck performance (stored as JSON for flexibility)

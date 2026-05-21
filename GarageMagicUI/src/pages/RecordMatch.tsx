@@ -32,15 +32,6 @@ function roleAllowsMultiple(role: SheriffRoleDto) {
   return role.role.toLowerCase().includes('outlaw') || role.label.toLowerCase().includes('outlaw')
 }
 
-function colorToRgba(input: string, alpha: number) {
-  const hex = input.replace('#', '')
-  if (!/^[0-9a-fA-F]{6}$/.test(hex)) return `rgba(124, 58, 237, ${alpha})`
-  const int = Number.parseInt(hex, 16)
-  const r = (int >> 16) & 255
-  const g = (int >> 8) & 255
-  const b = int & 255
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
 
 export default function RecordMatch() {
   const nav = useNavigate()
