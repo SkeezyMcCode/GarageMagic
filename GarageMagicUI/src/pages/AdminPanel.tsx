@@ -1,25 +1,30 @@
 ﻿import { useEffect, useState } from 'react'
-import { getPendingUsers, approveUser, approveAndLinkUser, rejectUser, createGuest, getGuests, deleteUser } from '../api'
+import { getPendingUsers, approveUser, approveAndLinkUser, rejectUser, createGuest, getGuests, deleteUser, getAllUsers, setUserAdminStatus } from '../api'
+import { useAuth } from '../context/useAuth'
 import type { PendingUserDto, UserDto } from '../types'
-import { Card, Spinner, ErrorMsg, SectionHeader, GuestBadge } from '../components/Ui'
+import { Card, Spinner, ErrorMsg, SectionHeader, GuestBadge, Badge } from '../components/Ui'
 
 export default function AdminPanel() {
+  const { user } = useAuth()
   const [pending, setPending] = useState<PendingUserDto[]>([])
   const [guests, setGuests] = useState<UserDto[]>([])
+  const [approvedUsers, setApprovedUsers] = useState<UserDto[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [actioning, setActioning] = useState<number | null>(null)
+  const [adminTogglingId, setAdminTogglingId] = useState<number | null>(null)
   const [pendingGuestLinks, setPendingGuestLinks] = useState<Record<number, string>>({})
   const [actionError, setActionError] = useState('')
   const [guestName, setGuestName] = useState('')
   const [guestAdding, setGuestAdding] = useState(false)
   const [guestError, setGuestError] = useState('')
 
-  const loadAdminData = async () => Promise.all([getPendingUsers(), getGuests()])
+  const loadAdminData = async () => Promise.all([getPendingUsers(), getGuests(), getAllUsers()])
 
-  const applyAdminData = (p: PendingUserDto[], g: UserDto[]) => {
+  const applyAdminData = (p: PendingUserDto[], g: UserDto[], users: UserDto[]) => {
     setPending(p)
     setGuests(g)
+    setApprovedUsers(users.filter(u => u.isApproved && !u.isGuest))
   }
 
   useEffect(() => {
@@ -27,9 +32,9 @@ export default function AdminPanel() {
 
     void (async () => {
       try {
-        const [p, g] = await loadAdminData()
+        const [p, g, users] = await loadAdminData()
         if (!active) return
-        applyAdminData(p, g)
+        applyAdminData(p, g, users)
       } catch {
         if (active) setError('Could not load data.')
       } finally {
@@ -62,8 +67,8 @@ export default function AdminPanel() {
       } else {
         await approveUser(id)
       }
-      const [p, g] = await loadAdminData()
-      applyAdminData(p, g)
+      const [p, g, users] = await loadAdminData()
+      applyAdminData(p, g, users)
       setPendingGuestLinks(current => {
         const next = { ...current }
         delete next[id]
@@ -82,8 +87,8 @@ export default function AdminPanel() {
     setActioning(id)
     try {
       await rejectUser(id)
-      const [p, g] = await loadAdminData()
-      applyAdminData(p, g)
+      const [p, g, users] = await loadAdminData()
+      applyAdminData(p, g, users)
     }
     finally { setActioning(null) }
   }
@@ -95,8 +100,8 @@ export default function AdminPanel() {
     try {
       await createGuest({ displayName: guestName.trim() })
       setGuestName('')
-      const [p, g] = await loadAdminData()
-      applyAdminData(p, g)
+      const [p, g, users] = await loadAdminData()
+      applyAdminData(p, g, users)
     } catch {
       setGuestError('Could not create guest.')
     } finally {
@@ -110,10 +115,31 @@ export default function AdminPanel() {
     setActioning(id)
     try {
       await deleteUser(id)
-      const [p, g] = await loadAdminData()
-      applyAdminData(p, g)
+      const [p, g, users] = await loadAdminData()
+      applyAdminData(p, g, users)
     }
     finally { setActioning(null) }
+  }
+
+  const toggleAdmin = async (target: UserDto) => {
+    if (user?.id === target.id) return
+
+    setActionError('')
+    const nextIsAdmin = !target.isAdmin
+
+    // Optimistic update to keep UI responsive; rollback in catch if request fails.
+    setApprovedUsers(current => current.map(u => u.id === target.id ? { ...u, isAdmin: nextIsAdmin } : u))
+    setAdminTogglingId(target.id)
+
+    try {
+      const updated = await setUserAdminStatus(target.id, nextIsAdmin)
+      setApprovedUsers(current => current.map(u => u.id === target.id ? updated : u))
+    } catch {
+      setApprovedUsers(current => current.map(u => u.id === target.id ? { ...u, isAdmin: target.isAdmin } : u))
+      setActionError('Could not update admin role. Please try again.')
+    } finally {
+      setAdminTogglingId(null)
+    }
   }
 
   if (loading) return <Spinner />
@@ -172,6 +198,47 @@ export default function AdminPanel() {
                 </div>
               </Card>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Users */}
+      <div>
+        <h2 className="text-lg font-semibold text-white mb-3">Users</h2>
+        {approvedUsers.length === 0 ? (
+          <Card><p className="text-gray-500 text-sm">No approved users yet.</p></Card>
+        ) : (
+          <div className="space-y-2">
+            {approvedUsers.map(u => {
+              const isSelf = user?.id === u.id
+              const isToggling = adminTogglingId === u.id
+              return (
+                <Card key={u.id} className="flex items-center justify-between py-3 gap-3">
+                  <div className="min-w-0">
+                    <p className="text-white font-medium truncate">{u.username}</p>
+                    <p className="text-gray-500 text-xs truncate">{u.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {u.isAdmin ? <Badge color="yellow">Admin</Badge> : <Badge color="gray">User</Badge>}
+                    <button
+                      type="button"
+                      title={isSelf ? "You can't remove your own admin role" : (u.isAdmin ? 'Remove admin role' : 'Make admin')}
+                      onClick={() => void toggleAdmin(u)}
+                      disabled={isSelf || isToggling}
+                      className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                        isSelf
+                          ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                          : u.isAdmin
+                            ? 'bg-red-900/40 text-red-300 hover:bg-red-900/60'
+                            : 'bg-green-900/40 text-green-300 hover:bg-green-900/60'
+                      } ${isToggling ? 'opacity-60' : ''}`}
+                    >
+                      {isToggling ? 'Saving…' : (u.isAdmin ? 'Remove Admin' : 'Make Admin')}
+                    </button>
+                  </div>
+                </Card>
+              )
+            })}
           </div>
         )}
       </div>

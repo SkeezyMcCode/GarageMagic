@@ -136,6 +136,8 @@ export const createGuest = (dto: CreateGuestDto) =>
   api.post<UserDto>('/users/guest', dto).then(r => r.data)
 export const getGuests = () =>
   api.get<UserDto[]>('/users/guests').then(r => r.data)
+export const setUserAdminStatus = (id: number, isAdmin: boolean) =>
+  api.post<UserDto>(`/users/${id}/set-admin`, { isAdmin }).then(r => r.data)
 export const deleteUser = (id: number) =>
   api.delete(`/users/${id}`).then(r => r.data)
 
