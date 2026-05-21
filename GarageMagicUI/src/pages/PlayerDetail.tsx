@@ -172,7 +172,10 @@ export default function PlayerDetail() {
                 <hr className="border-gray-800" />
                 <Row label="As Sheriff" value={`${stats.sheriffGamesWon}/${stats.sheriffGamesPlayed}`} />
                 <Row label="As Deputy" value={`${stats.deputyGamesWon}/${stats.deputyGamesPlayed}`} />
-                <Row label="As Red" value={`${stats.redGamesWon}/${stats.redGamesPlayed}`} />
+                <Row label="As Renegade" value={`${stats.renegadeGamesWon}/${stats.renegadeGamesPlayed}`} />
+                <Row label="As Outlaw" value={`${stats.outlawGamesWon}/${stats.outlawGamesPlayed}`} />
+                <Row label="Matriarch Triggers" value={stats.matriarchTriggered} />
+                <Row label="Matriarch Wins" value={stats.matriarchWins} />
               </>}
             </div>
           </Card>

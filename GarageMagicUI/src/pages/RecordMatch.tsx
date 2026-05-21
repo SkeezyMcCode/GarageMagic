@@ -1,7 +1,8 @@
 ﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getSelectableUsers, getDecksByUser, createMatch } from '../api'
-import type { UserDto, DeckDto } from '../types'
+import { getSelectableUsers, getDecksByUser, createMatch, getSheriffRolesMetadata } from '../api'
+import type { UserDto, DeckDto, SheriffRoleDto } from '../types'
+import ManaCostSymbols from '../components/ManaCostSymbols'
 import { Card, Spinner, ErrorMsg, SectionHeader } from '../components/Ui'
 
 const MATCH_TYPES = [
@@ -11,13 +12,35 @@ const MATCH_TYPES = [
   { value: 3, label: '6-Player Sheriff', count: 6, sheriff: true },
 ]
 
-const ROLE_OPTIONS = [
-  { value: 0, label: 'Sheriff', color: 'yellow' },
-  { value: 1, label: 'Deputy', color: 'blue' },
-  { value: 2, label: 'Red', color: 'red' },
+const DEFAULT_ROLE_OPTIONS: SheriffRoleDto[] = [
+  { value: 0, role: 'Sheriff', label: 'Sheriff', color: '#ffffff', manaSymbol: '{W}', allowMultiple: false },
+  { value: 1, role: 'Deputy', label: 'Deputy', color: '#60a5fa', manaSymbol: '{U}', allowMultiple: false },
+  { value: 2, role: 'Renegade', label: 'Renegade', color: '#f87171', manaSymbol: '{R}', allowMultiple: true },
 ]
 
 interface Participant { userId: number; deckId?: number; hiddenRole?: number }
+
+function normalizeManaSymbol(symbol?: string) {
+  if (!symbol) return ''
+  const trimmed = symbol.trim()
+  if (!trimmed) return ''
+  return trimmed.startsWith('{') ? trimmed : `{${trimmed}}`
+}
+
+function roleAllowsMultiple(role: SheriffRoleDto) {
+  if (typeof role.allowMultiple === 'boolean') return role.allowMultiple
+  return role.role.toLowerCase().includes('outlaw') || role.label.toLowerCase().includes('outlaw')
+}
+
+function colorToRgba(input: string, alpha: number) {
+  const hex = input.replace('#', '')
+  if (!/^[0-9a-fA-F]{6}$/.test(hex)) return `rgba(124, 58, 237, ${alpha})`
+  const int = Number.parseInt(hex, 16)
+  const r = (int >> 16) & 255
+  const g = (int >> 8) & 255
+  const b = int & 255
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
 
 export default function RecordMatch() {
   const nav = useNavigate()
@@ -29,12 +52,35 @@ export default function RecordMatch() {
   const [matchDate, setMatchDate] = useState(new Date().toISOString().slice(0, 16))
   const [participants, setParticipants] = useState<Participant[]>([{ userId: 0 }, { userId: 0 }, { userId: 0 }])
   const [winners, setWinners] = useState<number[]>([])
+  const [roleOptions, setRoleOptions] = useState<SheriffRoleDto[]>(DEFAULT_ROLE_OPTIONS)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
-    getSelectableUsers()
-      .then(setPlayers)
+    Promise.all([
+      getSelectableUsers(),
+      getSheriffRolesMetadata().catch(() => null),
+    ])
+      .then(([selectableUsers, sheriffRoles]) => {
+        setPlayers(selectableUsers)
+
+        const roles = Array.isArray(sheriffRoles)
+          ? sheriffRoles
+          : sheriffRoles?.roles
+
+        if (roles && roles.length > 0) {
+          const normalized = roles.map((role, index) => ({
+            value: Number.isInteger(role.value) ? role.value : index,
+            role: role.role || role.label || `Role${index + 1}`,
+            label: role.label || role.role || `Role ${index + 1}`,
+            color: role.color || '#7c3aed',
+            manaSymbol: role.manaSymbol,
+            winCondition: role.winCondition,
+            allowMultiple: role.allowMultiple,
+          }))
+          setRoleOptions(normalized)
+        }
+      })
       .catch(() => setError('Could not load players.'))
       .finally(() => setLoading(false))
   }, [])
@@ -46,6 +92,7 @@ export default function RecordMatch() {
     const count = MATCH_TYPES[idx].count
     setParticipants(Array.from({ length: count }, () => ({ userId: 0 })))
     setWinners([])
+    setSubmitError('')
   }
 
   const loadDecks = async (userId: number) => {
@@ -59,7 +106,7 @@ export default function RecordMatch() {
   const setParticipantUser = (i: number, userId: number) => {
     setParticipants(prev => {
       const next = [...prev]
-      next[i] = { ...next[i], userId, deckId: undefined }
+      next[i] = { ...next[i], userId, deckId: undefined, hiddenRole: undefined }
       return next
     })
     if (userId) loadDecks(userId)
@@ -68,8 +115,18 @@ export default function RecordMatch() {
   const setParticipantDeck = (i: number, deckId: number) =>
     setParticipants(prev => { const n = [...prev]; n[i] = { ...n[i], deckId: deckId || undefined }; return n })
 
-  const setParticipantRole = (i: number, role: number) =>
-    setParticipants(prev => { const n = [...prev]; n[i] = { ...n[i], hiddenRole: role }; return n })
+  const setParticipantRole = (i: number, role: SheriffRoleDto) => {
+    if (!roleAllowsMultiple(role)) {
+      const usedElsewhere = participants.some((p, idx) => idx !== i && p.hiddenRole === role.value)
+      if (usedElsewhere) return
+    }
+
+    setParticipants(prev => {
+      const n = [...prev]
+      n[i] = { ...n[i], hiddenRole: n[i].hiddenRole === role.value ? undefined : role.value }
+      return n
+    })
+  }
 
   const toggleWinner = (userId: number) =>
     setWinners(prev => prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId])
@@ -81,6 +138,14 @@ export default function RecordMatch() {
     setSubmitError('')
     if (participants.some(p => !p.userId)) { setSubmitError('All participant slots must be filled'); return }
     if (new Set(participants.map(p => p.userId)).size !== participants.length) { setSubmitError('Each player can only appear once'); return }
+    if (matchType.sheriff && participants.some(p => p.hiddenRole === undefined)) { setSubmitError('All sheriff match roles must be assigned.'); return }
+    if (matchType.sheriff) {
+      for (const role of roleOptions) {
+        if (roleAllowsMultiple(role)) continue
+        const count = participants.filter(p => p.hiddenRole === role.value).length
+        if (count > 1) { setSubmitError(`Only one player can be ${role.label}.`); return }
+      }
+    }
     if (winners.length === 0) { setSubmitError('Select at least one winner'); return }
 
     setSubmitting(true)
@@ -174,12 +239,28 @@ export default function RecordMatch() {
 
                 {matchType.sheriff && p.userId > 0 && (
                   <div className="flex gap-2 ml-8">
-                    {ROLE_OPTIONS.map(r => (
-                      <button key={r.value} type="button" onClick={() => setParticipantRole(i, r.value)}
-                        className={`flex-1 text-sm py-2 rounded-lg border transition-colors ${p.hiddenRole === r.value ? 'bg-purple-600 border-purple-500 text-white' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-500'}`}>
-                        {r.label}
+                    {roleOptions.map(role => {
+                      const selected = p.hiddenRole === role.value
+                      const disabled = !selected && !roleAllowsMultiple(role) && participants.some((other, idx) => idx !== i && other.hiddenRole === role.value)
+                      return (
+                      <button
+                        key={role.value}
+                        type="button"
+                        onClick={() => setParticipantRole(i, role)}
+                        disabled={disabled}
+                        title={role.winCondition ?? role.label}
+                        style={selected
+                          ? { backgroundColor: role.color, borderColor: role.color, color: '#0a0a0a' }
+                          : { backgroundColor: colorToRgba(role.color, 0.18), borderColor: colorToRgba(role.color, 0.5), color: role.color }}
+                        className={`flex-1 text-sm py-2 rounded-lg border transition-colors ${disabled ? 'opacity-35 cursor-not-allowed' : 'hover:brightness-110'}`}
+                      >
+                        <span className="inline-flex items-center justify-center gap-1">
+                          {role.manaSymbol && <ManaCostSymbols manaCost={normalizeManaSymbol(role.manaSymbol)} />}
+                          <span>{role.label}</span>
+                        </span>
                       </button>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>

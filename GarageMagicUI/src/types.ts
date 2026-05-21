@@ -85,6 +85,20 @@ export interface ScryfallSymbologyDto {
   symbols: ScryfallSymbolDto[]
 }
 
+export interface SheriffRoleDto {
+  value: number
+  role: string
+  label: string
+  color: string
+  manaSymbol?: string
+  winCondition?: string
+  allowMultiple?: boolean
+}
+
+export interface SheriffRolesDto {
+  roles: SheriffRoleDto[]
+}
+
 export interface MatchWinnerDto {
   userId: number
   username: string
@@ -161,8 +175,12 @@ export interface UserStatsDto {
   sheriffGamesWon: number
   deputyGamesPlayed: number
   deputyGamesWon: number
-  redGamesPlayed: number
-  redGamesWon: number
+  renegadeGamesPlayed: number
+  renegadeGamesWon: number
+  outlawGamesPlayed: number
+  outlawGamesWon: number
+  matriarchTriggered: number
+  matriarchWins: number
   prestigeLevel: number
 }
 

@@ -5,7 +5,8 @@ import type {
   CreateUserDto, CreateDeckDto, CreateMatchDto, CreateBetrayalDto,
   LoginDto, AuthResponseDto, PendingUserDto, CreateGuestDto,
   UpdateSeasonDto, UpsertSeasonRecordDto, UpdateDeckDto,
-  ScryfallAutocompleteDto, ScryfallCardDto, ScryfallSymbologyDto
+  ScryfallAutocompleteDto, ScryfallCardDto, ScryfallSymbologyDto,
+  SheriffRolesDto
 } from './types'
 
 const apiBaseUrl = (() => {
@@ -98,6 +99,8 @@ export const getMatchesByUser = (userId: number) =>
   api.get<MatchDto[]>(`/matches/user/${userId}`).then(r => r.data)
 export const getMatchesBySeason = (seasonId: number) =>
   api.get<MatchDto[]>(`/matches/season/${seasonId}`).then(r => r.data)
+export const getSheriffRolesMetadata = () =>
+  api.get<SheriffRolesDto | SheriffRolesDto['roles']>('/matches/sheriff-roles').then(r => r.data)
 
 // Seasons
 export const getCurrentSeason = () =>
