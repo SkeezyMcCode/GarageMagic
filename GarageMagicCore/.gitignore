@@ -26,6 +26,10 @@ appsettings.Development.json
 *.p12
 secrets.json
 
+## Local override files (never commit)
+*.local
+*.local.md
+
 ## OS
 .DS_Store
 Thumbs.db
