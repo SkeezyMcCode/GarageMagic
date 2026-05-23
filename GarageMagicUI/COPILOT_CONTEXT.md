@@ -170,6 +170,7 @@ Instructions to assistant:
 | Date | What changed |
 |------|-------------|
 | 2026-05-23 | Context pack V1 created |
+| 2026-05-23 | Betrayal date feature: added `UpdateBetrayalDto`, `IBetrayalService.UpdateAsync`, `BetrayalService.UpdateAsync`, `PATCH /api/betrayals/{id}` (Admin) in backend; added date picker to create form and admin edit panel in `Betrayals.tsx`; updated `updateBetrayal` signature in `api.ts` to accept `{ description?, betrayalDate? }` |
 
 ---
 

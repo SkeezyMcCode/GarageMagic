@@ -131,8 +131,8 @@ export const getBetrayalsByUser = (userId: number) =>
   api.get<BetrayalDto[]>(`/betrayals/user/${userId}`).then(r => r.data)
 export const deleteBetrayal = (id: number) =>
   api.delete(`/betrayals/${id}`)
-export const updateBetrayal = (id: number, description: string) =>
-  api.patch<BetrayalDto>(`/betrayals/${id}`, { description }).then(r => r.data)
+export const updateBetrayal = (id: number, dto: { description?: string; betrayalDate?: string }) =>
+  api.patch<BetrayalDto>(`/betrayals/${id}`, dto).then(r => r.data)
 
 // Admin
 export const getPendingUsers = () =>

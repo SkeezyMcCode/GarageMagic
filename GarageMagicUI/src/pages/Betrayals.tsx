@@ -11,13 +11,15 @@ export default function Betrayals() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ betrayerUserId: 0, victimUserId: 0, description: '' })
+  const today = new Date().toISOString().split('T')[0]
+  const [form, setForm] = useState({ betrayerUserId: 0, victimUserId: 0, description: '', betrayalDate: today })
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
   // Admin edit state
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editDescription, setEditDescription] = useState('')
+  const [editBetrayalDate, setEditBetrayalDate] = useState('')
   const [editError, setEditError] = useState('')
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
@@ -53,9 +55,12 @@ export default function Betrayals() {
     if (form.betrayerUserId === form.victimUserId) { setSubmitError('Betrayer and victim must be different players'); return }
     setSubmitting(true)
     try {
-      await createBetrayal({ ...form, betrayalDate: new Date().toISOString() })
+      await createBetrayal({
+        ...form,
+        betrayalDate: new Date(form.betrayalDate).toISOString()
+      })
       setShowForm(false)
-      setForm({ betrayerUserId: 0, victimUserId: 0, description: '' })
+      setForm({ betrayerUserId: 0, victimUserId: 0, description: '', betrayalDate: today })
       const [b, p] = await loadBetrayals()
       applyBetrayals(b, p)
     } catch (err: unknown) {
@@ -66,12 +71,14 @@ export default function Betrayals() {
   const startEdit = (betrayal: BetrayalDto) => {
     setEditingId(betrayal.id)
     setEditDescription(betrayal.description)
+    setEditBetrayalDate(betrayal.betrayalDate.split('T')[0])
     setEditError('')
   }
 
   const cancelEdit = () => {
     setEditingId(null)
     setEditDescription('')
+    setEditBetrayalDate('')
     setEditError('')
   }
 
@@ -82,7 +89,10 @@ export default function Betrayals() {
     }
     setIsUpdating(true)
     try {
-      await updateBetrayal(editingId!, editDescription.trim())
+      await updateBetrayal(editingId!, {
+        description: editDescription.trim(),
+        betrayalDate: editBetrayalDate ? new Date(editBetrayalDate).toISOString() : undefined
+      })
       const [b, p] = await loadBetrayals()
       applyBetrayals(b, p)
       cancelEdit()
@@ -142,6 +152,17 @@ export default function Betrayals() {
             <div>
               <label className="text-gray-500 text-xs block mb-1">What happened?</label>
               <textarea className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 h-20 resize-none" placeholder="Describe the dastardly deed…" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} required />
+            </div>
+            <div>
+              <label className="text-gray-500 text-xs block mb-1">Date of Betrayal</label>
+              <input
+                type="date"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500"
+                value={form.betrayalDate}
+                max={today}
+                onChange={e => setForm(f => ({ ...f, betrayalDate: e.target.value }))}
+                required
+              />
             </div>
             {submitError && <ErrorMsg msg={submitError} />}
             <button type="submit" disabled={submitting} className="bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white font-semibold px-6 py-2 rounded-lg text-sm transition-colors">
@@ -207,6 +228,15 @@ export default function Betrayals() {
                       className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500 h-24 resize-none"
                       value={editDescription}
                       onChange={e => setEditDescription(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-gray-500 text-xs block mb-1">Date of Betrayal</label>
+                    <input
+                      type="date"
+                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-yellow-500"
+                      value={editBetrayalDate}
+                      onChange={e => setEditBetrayalDate(e.target.value)}
                     />
                   </div>
                   {editError && <ErrorMsg msg={editError} />}
