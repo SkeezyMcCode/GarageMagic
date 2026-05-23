@@ -77,6 +77,25 @@ public class BetrayalService : IBetrayalService
         return true;
     }
 
+    public async Task<BetrayalDto?> UpdateAsync(int id, UpdateBetrayalDto dto)
+    {
+        var betrayal = await _context.Betrayals
+            .Include(b => b.BetrayerUser)
+            .Include(b => b.VictimUser)
+            .FirstOrDefaultAsync(b => b.Id == id);
+
+        if (betrayal == null) return null;
+
+        if (dto.Description != null)
+            betrayal.Description = dto.Description;
+
+        if (dto.BetrayalDate.HasValue)
+            betrayal.BetrayalDate = dto.BetrayalDate.Value;
+
+        await _context.SaveChangesAsync();
+        return MapToDto(betrayal);
+    }
+
     private static BetrayalDto MapToDto(Betrayal b) => new()
     {
         Id = b.Id,

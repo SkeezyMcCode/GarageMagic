@@ -63,5 +63,20 @@ public class BetrayalsController : ControllerBase
         var deleted = await _betrayalService.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();
     }
+
+    /// <summary>PATCH /api/betrayals/{id} - Update a betrayal's description and/or date (Admin only)</summary>
+    [HttpPatch("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(typeof(BetrayalDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateBetrayalDto dto)
+    {
+        if (dto.Description != null && string.IsNullOrWhiteSpace(dto.Description))
+            return BadRequest(new { error = "Description cannot be empty." });
+
+        var result = await _betrayalService.UpdateAsync(id, dto);
+        return result is null ? NotFound() : Ok(result);
+    }
 }
 

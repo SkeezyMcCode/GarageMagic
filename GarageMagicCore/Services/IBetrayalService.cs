@@ -8,5 +8,6 @@ public interface IBetrayalService
     Task<List<BetrayalDto>> GetByUserAsync(int userId);
     Task<List<BetrayalDto>> GetRecentAsync(int count = 10);
     Task<bool> DeleteAsync(int id);
+    Task<BetrayalDto?> UpdateAsync(int id, UpdateBetrayalDto dto);
 }
 

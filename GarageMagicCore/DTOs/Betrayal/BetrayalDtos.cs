@@ -12,6 +12,15 @@ public class CreateBetrayalDto
 }
 
 /// <summary>
+/// DTO for updating an existing betrayal (Admin only)
+/// </summary>
+public class UpdateBetrayalDto
+{
+    public string? Description { get; set; }
+    public DateTime? BetrayalDate { get; set; }
+}
+
+/// <summary>
 /// DTO for betrayal response
 /// </summary>
 public class BetrayalDto
