@@ -89,9 +89,9 @@ function roleSortIndex(role: SheriffRoleDto) {
   const kind = canonicalRole(role)
   if (kind === 'sheriff') return 0
   if (kind === 'deputy') return 1
-  if (kind === 'renegade') return 2
+  if (kind === 'outlaw') return 2
   if (kind === 'matriarch') return 3
-  if (kind === 'outlaw') return 4
+  if (kind === 'renegade') return 4
   return 99
 }
 
@@ -222,7 +222,7 @@ export default function RecordMatch() {
 
   const usedUserIds = participants.map(p => p.userId).filter(Boolean)
   const visibleRoleOptions = roleOptions
-    .filter(role => matchType.count === 6 || canonicalRole(role) !== 'outlaw')
+    .filter(role => matchType.count === 6 || canonicalRole(role) !== 'renegade')
     .sort((a, b) => roleSortIndex(a) - roleSortIndex(b))
 
   const submit = async (e: React.FormEvent) => {
@@ -399,4 +399,3 @@ export default function RecordMatch() {
     </div>
   )
 }
-
