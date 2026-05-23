@@ -2,8 +2,9 @@
 import { Link } from 'react-router-dom'
 import { getLeaderboard, getCurrentSeason, getMatchesBySeason, getRecentBetrayals } from '../api'
 import type { UserStandingDto, SeasonDto, MatchDto, BetrayalDto } from '../types'
-import { Card, Spinner, ErrorMsg, PrestigeBadge, WinsBar, Badge } from '../components/Ui'
+import { Card, Spinner, ErrorMsg, Badge } from '../components/Ui'
 import InlineMarkdown from '../components/InlineMarkdown'
+import StandingsRow from '../components/StandingsRow'
 
 const MATCH_TYPE_LABEL: Record<string, string> = {
   OneVsOneVsOne: '1v1v1',
@@ -67,24 +68,9 @@ export default function Dashboard() {
             ) : (() => {
               const maxWins = leaderboard[0]?.totalWins ?? 1
               return (
-                <div className="space-y-3">
+                <div>
                   {leaderboard.map((p, i) => (
-                    <Link key={p.userId} to={`/players/${p.userId}`} className="flex items-center gap-3 group">
-                      <span className={`text-lg font-bold w-7 text-center ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-gray-600'}`}>
-                        {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-white group-hover:text-purple-400 transition-colors truncate">{p.username}</span>
-                          {p.prestigeLevel > 0 && <PrestigeBadge level={p.prestigeLevel} />}
-                        </div>
-                        <WinsBar wins={p.totalWins} maxWins={maxWins} />
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-white font-semibold">{p.totalWins}W <span className="text-gray-500">{p.totalLosses}L</span></p>
-                        <p className="text-gray-500 text-xs">{p.totalMatches} games</p>
-                      </div>
-                    </Link>
+                    <StandingsRow key={p.userId} player={p} rank={i} maxWins={maxWins} />
                   ))}
                 </div>
               )

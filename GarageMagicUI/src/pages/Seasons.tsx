@@ -1,34 +1,9 @@
 ﻿import { useEffect, useState } from 'react'
 import { getAllSeasons, getAllUsers, getSeasonStandings, rolloverSeason, updateSeason, upsertSeasonRecord } from '../api'
 import { useAuth } from '../context/useAuth'
-import type { SeasonDto, SeasonStandingsDto, UserDto, UserStandingDto } from '../types'
-import { Card, Spinner, ErrorMsg, Badge, WinRateBar, PrestigeBadge } from '../components/Ui'
-
-// ─── Medal row ───────────────────────────────────────────────────────────────
-function StandingRow({ player, rank }: { player: UserStandingDto; rank: number }) {
-  const medal = rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : null
-  return (
-    <div className="flex items-center gap-3 py-2 border-b border-gray-800/50 last:border-0">
-      <span className="w-7 text-center text-lg shrink-0">{medal ?? <span className="text-gray-600 font-bold text-sm">{rank + 1}</span>}</span>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="text-white font-medium truncate">{player.username}</span>
-          {player.isGuest && <span className="text-gray-600 text-xs">(Guest)</span>}
-          {player.prestigeLevel > 0 && <PrestigeBadge level={player.prestigeLevel} />}
-        </div>
-        <WinRateBar winRate={player.winRate} />
-      </div>
-      <div className="text-right shrink-0">
-        <p className="text-white text-sm font-semibold">
-          <span className="text-green-400">{player.totalWins}W</span>
-          <span className="text-gray-500 mx-1">/</span>
-          <span className="text-red-400">{player.totalLosses}L</span>
-        </p>
-        <p className="text-gray-500 text-xs">{player.winRate.toFixed(1)}%</p>
-      </div>
-    </div>
-  )
-}
+import type { SeasonDto, SeasonStandingsDto, UserDto } from '../types'
+import { Card, Spinner, ErrorMsg, Badge } from '../components/Ui'
+import StandingsRow from '../components/StandingsRow'
 
 type RecordRow = {
   userId: string
@@ -59,6 +34,7 @@ function PastSeasonCard({ season, standings, onLoad }: {
   const [expanded, setExpanded] = useState(false)
   const top3 = standings?.standings.slice(0, 3) ?? []
   const rest = standings?.standings.slice(3) ?? []
+  const maxWins = standings?.standings[0]?.totalWins ?? 1
 
   return (
     <Card>
@@ -73,7 +49,6 @@ function PastSeasonCard({ season, standings, onLoad }: {
         <Badge color="gray">Ended</Badge>
       </div>
 
-      {/* Trigger load if not yet loaded */}
       {!standings && (
         <button
           onClick={() => onLoad(season.id)}
@@ -90,12 +65,16 @@ function PastSeasonCard({ season, standings, onLoad }: {
       {standings && standings.standings.length > 0 && (
         <>
           <div>
-            {top3.map((p, i) => <StandingRow key={p.userId} player={p} rank={i} />)}
+            {top3.map((p, i) => (
+              <StandingsRow key={p.userId} player={p} rank={i} maxWins={maxWins} showGuest />
+            ))}
           </div>
 
           {rest.length > 0 && (
             <>
-              {expanded && rest.map((p, i) => <StandingRow key={p.userId} player={p} rank={i + 3} />)}
+              {expanded && rest.map((p, i) => (
+                <StandingsRow key={p.userId} player={p} rank={i + 3} maxWins={maxWins} showGuest />
+              ))}
               <button
                 onClick={() => setExpanded(v => !v)}
                 className="mt-3 text-xs text-purple-400 hover:text-purple-300 transition-colors"
@@ -292,6 +271,7 @@ export default function Seasons() {
     new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
   )
   const activeStandings = activeSeason ? standingsMap[activeSeason.id] : null
+  const activeMaxWins = activeStandings?.standings[0]?.totalWins ?? 1
 
   return (
     <div className="space-y-6">
@@ -318,7 +298,9 @@ export default function Seasons() {
             {!activeStandings || activeStandings.standings.length === 0 ? (
               <p className="text-gray-500 text-sm">No matches recorded yet this season.</p>
             ) : (
-              activeStandings.standings.map((p, i) => <StandingRow key={p.userId} player={p} rank={i} />)
+              activeStandings.standings.map((p, i) => (
+                <StandingsRow key={p.userId} player={p} rank={i} maxWins={activeMaxWins} showGuest />
+              ))
             )}
           </div>
         </Card>
