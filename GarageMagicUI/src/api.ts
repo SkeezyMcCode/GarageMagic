@@ -129,6 +129,10 @@ export const getRecentBetrayals = (count = 10) =>
   api.get<BetrayalDto[]>(`/betrayals/recent?count=${count}`).then(r => r.data)
 export const getBetrayalsByUser = (userId: number) =>
   api.get<BetrayalDto[]>(`/betrayals/user/${userId}`).then(r => r.data)
+export const deleteBetrayal = (id: number) =>
+  api.delete(`/betrayals/${id}`)
+export const updateBetrayal = (id: number, description: string) =>
+  api.patch<BetrayalDto>(`/betrayals/${id}`, { description }).then(r => r.data)
 
 // Admin
 export const getPendingUsers = () =>
@@ -147,4 +151,3 @@ export const setUserAdminStatus = (id: number, isAdmin: boolean) =>
   api.post<UserDto>(`/users/${id}/set-admin`, { isAdmin }).then(r => r.data)
 export const deleteUser = (id: number) =>
   api.delete(`/users/${id}`).then(r => r.data)
-
