@@ -76,6 +76,19 @@ export function WinRateBar({ winRate }: { winRate: number }) {
   )
 }
 
+/** Bar that fills relative to a known maximum wins value — leader is always 100%. */
+export function WinsBar({ wins, maxWins }: { wins: number; maxWins: number }) {
+  const pct = maxWins > 0 ? (wins / maxWins) * 100 : 0
+  return (
+    <div className="w-full bg-gray-800 rounded-full h-1.5 mt-1">
+      <div
+        className="bg-yellow-500 h-1.5 rounded-full transition-all"
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  )
+}
+
 export function GuestBadge() {
   return <Badge color="gray">👤 Guest</Badge>
 }
