@@ -3,6 +3,7 @@ import { getRecentBetrayals, getLeaderboard, createBetrayal, deleteBetrayal, upd
 import { useAuth } from '../context/useAuth'
 import type { BetrayalDto, UserStandingDto } from '../types'
 import { Card, Spinner, ErrorMsg, SectionHeader } from '../components/Ui'
+import InlineMarkdown from '../components/InlineMarkdown'
 
 export default function Betrayals() {
   const { user } = useAuth()
@@ -151,7 +152,7 @@ export default function Betrayals() {
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">What happened?</label>
-              <textarea className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 h-20 resize-none" placeholder="Describe the dastardly deed…" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} required />
+              <textarea className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 h-20 resize-none" placeholder="Describe the dastardly deed… (use ~~text~~ for strikethrough)" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} required />
             </div>
             <div>
               <label className="text-gray-500 text-xs block mb-1">Date of Betrayal</label>
@@ -187,7 +188,7 @@ export default function Betrayals() {
                     <span className="text-purple-400 font-semibold">{b.victimUsername}</span>
                     <span className="text-gray-500 mx-2">in the back</span>
                   </p>
-                  <p className="text-gray-400 mt-1 text-sm">{b.description}</p>
+                  <InlineMarkdown text={b.description} className="text-gray-400 mt-1 text-sm block" />
                 </div>
                 <div className="flex flex-col items-end gap-2 shrink-0">
                   <span className="text-gray-600 text-xs">{new Date(b.betrayalDate).toLocaleDateString()}</span>

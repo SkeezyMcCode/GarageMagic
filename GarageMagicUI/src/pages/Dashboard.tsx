@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { getLeaderboard, getCurrentSeason, getMatchesBySeason, getRecentBetrayals } from '../api'
 import type { UserStandingDto, SeasonDto, MatchDto, BetrayalDto } from '../types'
 import { Card, Spinner, ErrorMsg, PrestigeBadge, WinRateBar, Badge } from '../components/Ui'
+import InlineMarkdown from '../components/InlineMarkdown'
 
 const MATCH_TYPE_LABEL: Record<string, string> = {
   OneVsOneVsOne: '1v1v1',
@@ -102,7 +103,7 @@ export default function Dashboard() {
                     <span className="text-gray-500"> stabbed </span>
                     <span className="text-purple-400 font-medium">{b.victimUsername}</span>
                   </p>
-                  <p className="text-gray-500 text-xs mt-0.5 line-clamp-2">{b.description}</p>
+                  <InlineMarkdown text={b.description} className="text-gray-500 text-xs mt-0.5 line-clamp-2 block" />
                 </div>
               ))}
             </div>

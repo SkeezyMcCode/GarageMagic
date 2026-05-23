@@ -5,6 +5,7 @@ import type { UserWithStatsDto, DeckDto, MatchDto, UserStatsDto, BetrayalDto } f
 import { Card, Spinner, ErrorMsg, Badge, PrestigeBadge } from '../components/Ui'
 import CommanderAutocompleteInput from '../components/CommanderAutocompleteInput'
 import ManaCostSymbols from '../components/ManaCostSymbols'
+import InlineMarkdown from '../components/InlineMarkdown'
 
 const MATCH_TYPE_LABEL: Record<string, string> = {
   OneVsOneVsOne: '1v1v1', OneVsOneVsOneVsOne: '1v1v1v1',
@@ -372,7 +373,7 @@ export default function PlayerDetail() {
                 <span className="text-gray-500"> betrayed </span>
                 <span className="text-purple-400 font-medium">{b.victimUsername}</span>
                 <span className="text-gray-600 mx-2">·</span>
-                <span className="text-gray-400">{b.description}</span>
+                <InlineMarkdown text={b.description} className="text-gray-400" />
               </div>
             ))}
           </div>
