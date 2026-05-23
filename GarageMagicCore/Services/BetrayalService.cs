@@ -67,6 +67,16 @@ public class BetrayalService : IBetrayalService
         return betrayals.Select(MapToDto).ToList();
     }
 
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var betrayal = await _context.Betrayals.FindAsync(id);
+        if (betrayal == null) return false;
+
+        _context.Betrayals.Remove(betrayal);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     private static BetrayalDto MapToDto(Betrayal b) => new()
     {
         Id = b.Id,

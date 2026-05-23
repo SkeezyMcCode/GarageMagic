@@ -52,5 +52,16 @@ public class BetrayalsController : ControllerBase
         var betrayals = await _betrayalService.GetRecentAsync(count);
         return Ok(betrayals);
     }
+
+    /// <summary>DELETE /api/betrayals/{id} - Delete a betrayal (Admin only)</summary>
+    [HttpDelete("{id:int}")]
+    [Authorize(Roles = "Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var deleted = await _betrayalService.DeleteAsync(id);
+        return deleted ? NoContent() : NotFound();
+    }
 }
 
