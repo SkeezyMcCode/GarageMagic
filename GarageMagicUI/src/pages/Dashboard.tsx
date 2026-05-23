@@ -21,7 +21,7 @@ export default function Dashboard() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    Promise.all([getCurrentSeason(), getRecentBetrayals(5)])
+    Promise.all([getCurrentSeason(), getRecentBetrayals(20)])
       .then(async ([s, b]) => {
         setSeason(s)
         setBetrayals(b)
@@ -90,12 +90,12 @@ export default function Dashboard() {
         </div>
 
         {/* Recent betrayals */}
-        <Card>
+        <Card className="lg:flex lg:flex-col lg:h-full">
           <h3 className="font-semibold text-white mb-4 flex items-center gap-2">🗡️ Recent Betrayals</h3>
           {betrayals.length === 0 ? (
             <p className="text-gray-500 text-sm">No betrayals recorded.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 max-h-48 overflow-hidden lg:max-h-none lg:overflow-y-auto lg:flex-1 lg:min-h-0 lg:pr-1">
               {betrayals.map(b => (
                 <div key={b.id} className="text-sm border-l-2 border-red-700 pl-3">
                   <p className="text-white">
@@ -108,7 +108,7 @@ export default function Dashboard() {
               ))}
             </div>
           )}
-          <Link to="/betrayals" className="block mt-4 text-xs text-purple-400 hover:text-purple-300">View all →</Link>
+          <Link to="/betrayals" className="block mt-4 text-xs text-purple-400 hover:text-purple-300 lg:mt-auto lg:pt-3 shrink-0">View all →</Link>
         </Card>
       </div>
 
